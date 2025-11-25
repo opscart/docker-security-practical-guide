@@ -1,0 +1,147 @@
+version: '3.8'
+
+# Lab 08: Secure Multi-Tier Architecture with Docker Compose
+# This demonstrates production-ready network segmentation
+
+networks:
+  # Public network - Exposed to internet
+  frontend:
+    driver: bridge
+    
+  # Application network - Internal communication
+  backend:
+    driver: bridge
+    
+  # Database network - Completely isolated
+  database:
+    driver: bridge
+    internal: true  # No external gateway
+
+services:
+  # Web Tier - Public facing
+  web:
+    image: nginx:alpine
+    container_name: web
+    networks:
+      - frontend
+      - backend  # Can reach app tier
+    ports:
+      - "8080:80"
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    labels:
+      - "com.docker.security.tier=frontend"
+      - "com.docker.security.exposure=public"
+
+  # Application Tier - Gateway between web and database
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: app
+    networks:
+      - backend      # Receives requests from web
+      - database     # Can reach database
+    environment:
+      - DATABASE_URL=postgresql://postgres:secret@db:5432/appdb
+      - PORT=5000
+      - SERVICE_NAME=api
+    depends_on:
+      - db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    labels:
+      - "com.docker.security.tier=application"
+      - "com.docker.security.exposure=internal"
+    # Security: Run as non-root user
+    user: "1000:1000"
+    # Security: Read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.cache
+
+  # Database Tier - Completely isolated
+  db:
+    image: postgres:15-alpine
+    container_name: db
+    networks:
+      - database  # Internal network only
+    environment:
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "com.docker.security.tier=database"
+      - "com.docker.security.exposure=none"
+    # Security: Run as postgres user (non-root)
+    user: "postgres"
+    # Security: Limit resources
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  db-data:
+    driver: local
+
+# Security Notes:
+# 
+# 1. Network Segmentation:
+#    - Web tier: Can reach app tier only
+#    - App tier: Gateway with access to both web and db
+#    - DB tier: On internal network, cannot be reached from outside
+#
+# 2. Port Exposure:
+#    - Only port 8080 exposed to host (web tier)
+#    - App tier: No ports exposed (internal only)
+#    - DB tier: No ports exposed, internal network prevents exposure
+#
+# 3. Defense in Depth:
+#    - Network isolation (multiple networks)
+#    - Internal network for database (no external gateway)
+#    - Health checks for automatic recovery
+#    - Resource limits to prevent DoS
+#    - Non-root users
+#    - Read-only filesystems where possible
+#
+# 4. Monitoring:
+#    - Labels for easy filtering
+#    - Health checks for status
+#    - Restart policies for availability
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose ps
+#   docker-compose logs -f app
+#   docker-compose down
+#
+# Verify Security:
+#   docker network inspect 08-network-security_database
+#   docker exec web nc -zv db 5432  # Should fail (no route)
+#   docker exec app nc -zv db 5432  # Should succeed (authorized)

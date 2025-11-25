@@ -1,0 +1,34 @@
+# Generated certificates
+certs/*.pem
+certs/*.key
+certs/*.crt
+certs/*.srl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Docker
+.dockerignore

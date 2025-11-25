@@ -602,7 +602,6 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 - **Author**: Shamsher Khan
 - **GitHub**: [@opscart](https://github.com/opscart)
-- **Website**: [opscart.com](https://opscart.com)
 - **Issues**: [Report issues](https://github.com/opscart/docker-security-practical-guide/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/opscart/docker-security-practical-guide/discussions)
 

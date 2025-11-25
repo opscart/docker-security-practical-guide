@@ -1,0 +1,78 @@
+version: '3.8'
+
+# Lab 08: INSECURE Docker Compose Example
+# This demonstrates WHAT NOT TO DO - for educational purposes only
+# DO NOT USE IN PRODUCTION!
+
+services:
+  # MISTAKE 1: Using default bridge network (no networks defined)
+  # MISTAKE 2: Exposing database port to host
+  # MISTAKE 3: No resource limits
+  # MISTAKE 4: Running as root (no user specified)
+  # MISTAKE 5: No health checks
+  database:
+    image: postgres:15-alpine
+    container_name: insecure-db
+    ports:
+      - "5432:5432"  # ❌ Database exposed to host/internet!
+    environment:
+      - POSTGRES_PASSWORD=password123  # ❌ Weak password in plain text!
+      - POSTGRES_DB=productiondb
+    # ❌ No resource limits - can consume all host memory
+    # ❌ No health check - Docker thinks it's healthy even if crashed
+    # ❌ No user specified - runs as root
+    # ❌ No network isolation
+
+  # MISTAKE 6: Using host networking
+  # MISTAKE 7: No resource limits
+  web:
+    image: nginx:alpine
+    container_name: insecure-web
+    network_mode: "host"  # ❌ Bypasses ALL Docker networking security!
+    # ❌ Can access all host network interfaces
+    # ❌ No isolation from host
+    # ❌ Port conflicts possible
+
+  # MISTAKE 8: Using privileged mode
+  # MISTAKE 9: Mounting sensitive host directories
+  admin:
+    image: alpine:latest
+    container_name: insecure-admin
+    privileged: true  # ❌ EXTREMELY DANGEROUS - disables all security!
+    volumes:
+      - /:/host  # ❌ Mounting entire host filesystem!
+      - /var/run/docker.sock:/var/run/docker.sock  # ❌ Docker socket access!
+    command: sleep infinity
+    # ❌ Can escape container easily
+    # ❌ Root on container = root on host
+
+  # MISTAKE 10: Flat network (if using networks, everything on one)
+  api:
+    image: node:18-alpine
+    container_name: insecure-api
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@database:5432/productiondb
+      - API_KEY=super-secret-key-123  # ❌ Secrets in environment variables!
+    # ❌ Can directly access database (should go through proxy)
+    # ❌ No resource limits
+    # ❌ No health check
+    # ❌ Running as root
+
+# Summary of ALL mistakes in this file:
+# 
+# 1. ❌ Using default bridge network (no custom networks)
+# 2. ❌ Database port exposed to host (5432:5432)
+# 3. ❌ Using host networking (network_mode: host)
+# 4. ❌ Using privileged mode (privileged: true)
+# 5. ❌ Mounting sensitive host paths (/, /var/run/docker.sock)
+# 6. ❌ No resource limits (memory, CPU)
+# 7. ❌ No health checks
+# 8. ❌ Running as root (no user specified)
+# 9. ❌ Secrets in plain text (passwords, API keys)
+# 10. ❌ Flat network architecture
+#
+# Security Score: 0/10 - DO NOT USE!
+#
+# See docker-compose.yml for the SECURE version of this same setup.
