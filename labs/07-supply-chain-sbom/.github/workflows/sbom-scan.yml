@@ -1,0 +1,274 @@
+name: Docker SBOM and Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'labs/07-supply-chain-sbom/**'
+      - 'Dockerfile'
+      - '.github/workflows/sbom-scan.yml'
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Daily scan at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: myapp
+  SBOM_FORMAT: spdx-json
+  REGISTRY: ghcr.io
+
+jobs:
+  sbom-generation-and-scan:
+    name: Generate SBOM and Scan for Vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      # Step 2: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      # Step 3: Build Docker image
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      # Step 4: Generate SBOM using Syft
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: ${{ env.SBOM_FORMAT }}
+          output-file: sbom.spdx.json
+          upload-artifact: true
+          upload-release-assets: true
+      
+      # Step 5: Scan SBOM for vulnerabilities using Grype
+      - name: Scan SBOM for vulnerabilities
+        uses: anchore/scan-action@v3
+        id: scan
+        with:
+          sbom: sbom.spdx.json
+          fail-build: false  # Set to true to fail on vulnerabilities
+          severity-cutoff: high
+          output-format: sarif
+      
+      # Step 6: Upload SARIF results to GitHub Security
+      - name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+      
+      # Step 7: Generate human-readable reports
+      - name: Generate vulnerability report
+        if: always()
+        run: |
+          # Install Grype if not already available
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Generate detailed reports
+          grype sbom:sbom.spdx.json -o json > vulnerability-report.json
+          grype sbom:sbom.spdx.json -o table > vulnerability-report.txt
+          
+          # Display summary
+          echo "## Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
+          grype sbom:sbom.spdx.json -o table >> $GITHUB_STEP_SUMMARY
+      
+      # Step 8: Parse vulnerability statistics
+      - name: Parse vulnerability statistics
+        if: always()
+        id: vuln-stats
+        run: |
+          # Extract vulnerability counts
+          CRITICAL=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' vulnerability-report.json)
+          HIGH=$(jq '[.matches[] | select(.vulnerability.severity == "High")] | length' vulnerability-report.json)
+          MEDIUM=$(jq '[.matches[] | select(.vulnerability.severity == "Medium")] | length' vulnerability-report.json)
+          LOW=$(jq '[.matches[] | select(.vulnerability.severity == "Low")] | length' vulnerability-report.json)
+          TOTAL=$(jq '.matches | length' vulnerability-report.json)
+          
+          # Output to GitHub Actions
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "low=$LOW" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          
+          # Create summary
+          echo "### 🔍 Vulnerability Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🟡 Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔵 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
+      
+      # Step 9: Upload artifacts
+      - name: Upload SBOM and scan results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: sbom-and-vulnerability-reports
+          path: |
+            sbom.spdx.json
+            vulnerability-report.json
+            vulnerability-report.txt
+          retention-days: 90
+      
+      # Step 10: Comment on PR with results
+      - name: Comment PR with scan results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const critical = '${{ steps.vuln-stats.outputs.critical }}';
+            const high = '${{ steps.vuln-stats.outputs.high }}';
+            const medium = '${{ steps.vuln-stats.outputs.medium }}';
+            const total = '${{ steps.vuln-stats.outputs.total }}';
+            
+            const comment = `## 🔍 Security Scan Results
+            
+            **SBOM Generated:** ✅
+            **Vulnerabilities Found:** ${total}
+            
+            | Severity | Count |
+            |----------|-------|
+            | 🔴 Critical | ${critical} |
+            | 🟠 High | ${high} |
+            | 🟡 Medium | ${medium} |
+            
+            ${critical > 0 ? '⚠️ **Critical vulnerabilities found!** Review before merging.' : ''}
+            ${critical == 0 && high == 0 ? '✅ No critical or high severity vulnerabilities found.' : ''}
+            
+            📄 Full reports are available in the workflow artifacts.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      # Step 11: Fail build on critical vulnerabilities (optional)
+      - name: Check vulnerability threshold
+        if: always()
+        run: |
+          CRITICAL=${{ steps.vuln-stats.outputs.critical }}
+          HIGH=${{ steps.vuln-stats.outputs.high }}
+          
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ Build failed: $CRITICAL critical vulnerabilities found"
+            # Uncomment to fail the build:
+            # exit 1
+          elif [ "$HIGH" -gt 5 ]; then
+            echo "⚠️ Warning: $HIGH high vulnerabilities found (threshold: 5)"
+          else
+            echo "✅ Vulnerability check passed"
+          fi
+      
+      # Step 12: Sign SBOM with Cosign (optional)
+      - name: Install Cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v3
+      
+      - name: Sign SBOM with Cosign
+        if: github.event_name != 'pull_request'
+        run: |
+          # Sign SBOM (keyless signing with OIDC)
+          cosign sign-blob --yes sbom.spdx.json --output-signature sbom.spdx.json.sig --output-certificate sbom.spdx.json.pem
+          
+          echo "✅ SBOM signed successfully"
+          echo "Signature: sbom.spdx.json.sig"
+          echo "Certificate: sbom.spdx.json.pem"
+        env:
+          COSIGN_EXPERIMENTAL: 1
+      
+      # Step 13: Push image to registry (only on main branch)
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Push Docker image
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          
+          echo "✅ Image pushed: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest"
+      
+      # Step 14: Attach SBOM to container image
+      - name: Attach SBOM to image
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          cosign attach sbom --sbom sbom.spdx.json ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          
+          echo "✅ SBOM attached to image"
+        env:
+          COSIGN_EXPERIMENTAL: 1
+
+  # Job 2: Compare with previous SBOM (optional)
+  sbom-comparison:
+    name: Compare SBOM with Previous Version
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: sbom-generation-and-scan
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Download current SBOM
+        uses: actions/download-artifact@v3
+        with:
+          name: sbom-and-vulnerability-reports
+          path: ./current
+      
+      - name: Download previous SBOM
+        uses: dawidd6/action-download-artifact@v2
+        continue-on-error: true
+        with:
+          workflow: sbom-scan.yml
+          branch: main
+          name: sbom-and-vulnerability-reports
+          path: ./previous
+      
+      - name: Compare SBOMs
+        if: hashFiles('./previous/sbom.spdx.json') != ''
+        run: |
+          # Install Syft for comparison
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          echo "## 📊 SBOM Comparison" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Basic comparison
+          PREV_COUNT=$(jq '.artifacts | length' ./previous/sbom.spdx.json 2>/dev/null || echo "0")
+          CURR_COUNT=$(jq '.artifacts | length' ./current/sbom.spdx.json 2>/dev/null || echo "0")
+          
+          echo "- Previous version: $PREV_COUNT packages" >> $GITHUB_STEP_SUMMARY
+          echo "- Current version: $CURR_COUNT packages" >> $GITHUB_STEP_SUMMARY
+          echo "- Difference: $((CURR_COUNT - PREV_COUNT)) packages" >> $GITHUB_STEP_SUMMARY

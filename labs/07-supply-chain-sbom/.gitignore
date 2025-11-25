@@ -1,0 +1,35 @@
+# Lab 07 - Ignore generated artifacts
+
+# Output directory with SBOMs and scan results
+output/
+
+# Generated SBOM files
+*.sbom.json
+sbom.json
+sbom.txt
+sbom.spdx.json
+sbom.cyclonedx.json
+*.sig
+*.pem
+
+# Vulnerability reports
+vulnerability-report.json
+vulnerability-report.txt
+*-scan-results.json
+
+# Generated application files (created by demo)
+Dockerfile.sample
+package.json
+package-lock.json
+server.js
+node_modules/
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Tool binaries (if installed locally)
+bin/
+syft
+grype

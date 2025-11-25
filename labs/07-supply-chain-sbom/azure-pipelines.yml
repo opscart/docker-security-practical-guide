@@ -1,0 +1,213 @@
+# Azure DevOps Pipeline for Docker SBOM Generation and Security Scanning
+# This pipeline demonstrates integration of SBOM generation and vulnerability scanning
+# into a standard CI/CD workflow
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - 'labs/07-supply-chain-sbom/**'
+      - 'Dockerfile'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  dockerRegistry: '$(dockerRegistryServiceConnection)'
+  imageRepository: 'myapp'
+  dockerfilePath: '**/Dockerfile'
+  tag: '$(Build.BuildId)'
+  sbomFormat: 'spdx-json'
+
+stages:
+- stage: Build
+  displayName: 'Build and Scan'
+  jobs:
+  - job: BuildAndScan
+    displayName: 'Build Docker Image and Generate SBOM'
+    steps:
+    
+    # Step 1: Checkout code
+    - checkout: self
+      displayName: 'Checkout Repository'
+    
+    # Step 2: Build Docker image
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        command: build
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        tags: |
+          $(tag)
+          latest
+    
+    # Step 3: Install Syft
+    - script: |
+        echo "Installing Syft..."
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+        syft version
+      displayName: 'Install Syft'
+    
+    # Step 4: Install Grype
+    - script: |
+        echo "Installing Grype..."
+        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+        grype version
+      displayName: 'Install Grype'
+    
+    # Step 5: Generate SBOM
+    - script: |
+        echo "Generating SBOM in $(sbomFormat) format..."
+        syft $(imageRepository):$(tag) -o $(sbomFormat) > sbom.json
+        
+        echo "SBOM Statistics:"
+        if command -v jq &> /dev/null; then
+          PACKAGE_COUNT=$(jq '.artifacts | length' sbom.json 2>/dev/null || echo "N/A")
+          echo "Total packages: $PACKAGE_COUNT"
+        else
+          echo "Install jq for detailed statistics"
+        fi
+        
+        # Also generate human-readable version
+        syft $(imageRepository):$(tag) -o table > sbom.txt
+        
+      displayName: 'Generate SBOM'
+      continueOnError: false
+    
+    # Step 6: Scan for vulnerabilities
+    - script: |
+        echo "Scanning for vulnerabilities..."
+        
+        # Generate detailed JSON report
+        grype sbom:./sbom.json -o json > vulnerability-report.json
+        
+        # Display summary
+        grype sbom:./sbom.json -o table
+        
+        # Check for critical/high vulnerabilities
+        echo ""
+        echo "Checking for critical/high severity vulnerabilities..."
+        grype sbom:./sbom.json --fail-on high
+        
+      displayName: 'Vulnerability Scan'
+      continueOnError: true  # Set to false to fail build on vulnerabilities
+    
+    # Step 7: Generate vulnerability summary
+    - script: |
+        if command -v jq &> /dev/null; then
+          CRITICAL=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' vulnerability-report.json)
+          HIGH=$(jq '[.matches[] | select(.vulnerability.severity == "High")] | length' vulnerability-report.json)
+          MEDIUM=$(jq '[.matches[] | select(.vulnerability.severity == "Medium")] | length' vulnerability-report.json)
+          TOTAL=$(jq '.matches | length' vulnerability-report.json)
+          
+          echo "##[section]Vulnerability Summary"
+          echo "Critical: $CRITICAL"
+          echo "High: $HIGH"
+          echo "Medium: $MEDIUM"
+          echo "Total: $TOTAL"
+          
+          # Set pipeline variables
+          echo "##vso[task.setvariable variable=CriticalCount]$CRITICAL"
+          echo "##vso[task.setvariable variable=HighCount]$HIGH"
+          echo "##vso[task.setvariable variable=TotalCount]$TOTAL"
+          
+          # Fail if critical vulnerabilities found (optional)
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "##vso[task.logissue type=error]$CRITICAL critical vulnerabilities found!"
+            # Uncomment to fail the build:
+            # exit 1
+          fi
+        fi
+      displayName: 'Vulnerability Summary'
+      continueOnError: true
+    
+    # Step 8: Publish SBOM as artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish SBOM Artifact'
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)'
+        artifactName: 'sbom-and-scan-results'
+        publishLocation: 'Container'
+      condition: always()
+      # Publish these files:
+      #   - sbom.json (SPDX format)
+      #   - sbom.txt (human-readable)
+      #   - vulnerability-report.json
+    
+    # Step 9: Publish test results (optional)
+    - task: PublishTestResults@2
+      displayName: 'Publish Security Test Results'
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/vulnerability-report.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        testRunTitle: 'Security Vulnerability Scan'
+      condition: false  # Enable if you convert results to JUnit format
+    
+    # Step 10: Push Docker image (only if scan passes)
+    - task: Docker@2
+      displayName: 'Push Docker Image'
+      inputs:
+        command: push
+        repository: $(imageRepository)
+        tags: |
+          $(tag)
+          latest
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    
+    # Step 11: Sign SBOM with Cosign (optional, requires Cosign setup)
+    - script: |
+        # Install Cosign
+        curl -sLO https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
+        chmod +x cosign-linux-amd64
+        sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+        
+        # Sign SBOM (requires cosign key setup)
+        # cosign sign-blob --key cosign.key sbom.json > sbom.json.sig
+        
+        echo "Cosign signing skipped - configure keys first"
+      displayName: 'Sign SBOM (Optional)'
+      condition: false  # Enable when Cosign is configured
+
+# Optional: Deployment stage
+- stage: Deploy
+  displayName: 'Deploy to Environment'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployProd
+    displayName: 'Deploy to Production'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo "Deploy application with verified SBOM"
+            displayName: 'Deployment Step'
+          
+          # Add your deployment steps here
+          # Ensure SBOM is available for runtime verification
+
+# Notifications (optional)
+- stage: Notify
+  displayName: 'Send Notifications'
+  dependsOn: Build
+  condition: always()
+  jobs:
+  - job: SendNotification
+    displayName: 'Send Security Scan Results'
+    steps:
+    - script: |
+        echo "Send notification with vulnerability summary"
+        # Integrate with Slack, Teams, or email
+      displayName: 'Notify Team'
