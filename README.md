@@ -148,7 +148,7 @@ Advanced labs covering supply chain security and comprehensive network security.
 
 ---
 
-### [Lab 07: Supply Chain Security with SBOM](./labs/07-sbom/)
+### [Lab 07: Supply Chain Security with SBOM](./labs/07-supply-chain-sbom/)
 
 **What You'll Learn:**
 - Generate Software Bill of Materials (SBOM) using Syft
