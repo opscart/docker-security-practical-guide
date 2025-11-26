@@ -100,19 +100,63 @@ stages:
         timeoutInMinutes: 10
         steps:
           - script: |
-              cd $(LAB_DIR)
-              chmod +x certs/generate-certs.sh demo-tls-encryption.sh cleanup.sh
-              yes "" | timeout 300 ./demo-tls-encryption.sh || true
-              ./cleanup.sh
-            displayName: 'Run Scenario 4'
-
-          - script: |
-              cd $(LAB_DIR)
-              if [ ! -f "certs/server-cert.pem" ]; then
-                echo "ERROR: Certificates not generated"
+              set -e
+              echo "=== Diagnostic Information ==="
+              echo "Current directory: $(pwd)"
+              echo "LAB_DIR value: $(LAB_DIR)"
+              
+              # Navigate to lab directory
+              cd $(System.DefaultWorkingDirectory)/$(LAB_DIR)
+              echo "After cd to LAB_DIR: $(pwd)"
+              echo "Directory contents:"
+              ls -la
+              
+              # Check if certs directory exists
+              if [ ! -d "certs" ]; then
+                echo "ERROR: certs directory does not exist!"
+                echo "Creating certs directory..."
+                mkdir -p certs
+              fi
+              
+              # Make scripts executable
+              chmod +x demo-tls-encryption.sh cleanup.sh
+              if [ -f "certs/generate-certs.sh" ]; then
+                chmod +x certs/generate-certs.sh
+              else
+                echo "WARNING: certs/generate-certs.sh not found"
+                echo "Contents of certs directory:"
+                ls -la certs/ || echo "Cannot list certs directory"
                 exit 1
               fi
-            displayName: 'Verify Certificates Generated'
+              
+              # Generate certificates
+              echo "=== Generating TLS Certificates ==="
+              cd certs
+              ./generate-certs.sh
+              cd ..
+              
+              # Verify certificates exist
+              echo "=== Verifying Certificate Files ==="
+              if [ ! -f "certs/server-cert.pem" ] || [ ! -f "certs/server-key.pem" ]; then
+                echo "ERROR: Certificate generation failed"
+                echo "Contents of certs directory:"
+                ls -la certs/
+                exit 1
+              fi
+              
+              echo "SUCCESS: Certificates generated"
+              ls -lh certs/*.pem
+            displayName: 'Generate and Verify Certificates'
+
+          - script: |
+              cd $(System.DefaultWorkingDirectory)/$(LAB_DIR)
+              yes "" | timeout 300 ./demo-tls-encryption.sh || true
+            displayName: 'Run Scenario 4'
+            
+          - script: |
+              cd $(System.DefaultWorkingDirectory)/$(LAB_DIR)
+              ./cleanup.sh
+            displayName: 'Cleanup'
 
       - job: Scenario5
         displayName: 'Scenario 5: Common Misconfigurations'
@@ -133,20 +177,20 @@ stages:
         displayName: 'Test Secure Compose'
         steps:
           - script: |
-              cd $(LAB_DIR)
-              docker-compose -f docker-compose.yml up -d
+              cd $(System.DefaultWorkingDirectory)/$(LAB_DIR)
+              docker compose -f docker-compose.yml up -d
               sleep 10
-              docker-compose -f docker-compose.yml ps
-              docker-compose -f docker-compose.yml down -v
+              docker compose -f docker-compose.yml ps
+              docker compose -f docker-compose.yml down -v
             displayName: 'Test Secure Docker Compose'
 
       - job: ValidateInsecureCompose
         displayName: 'Validate Insecure Compose (Educational)'
         steps:
           - script: |
-              cd $(LAB_DIR)
+              cd $(System.DefaultWorkingDirectory)/$(LAB_DIR)
               # Just validate syntax, don't run (it's intentionally insecure)
-              docker-compose -f docker-compose.insecure.yml config > /dev/null
+              docker compose -f docker-compose.insecure.yml config > /dev/null
               echo "Insecure compose file syntax is valid"
             displayName: 'Validate Insecure Compose Syntax'
 
