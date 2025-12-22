@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  # Vulnerable container with docker socket mounted
+  vulnerable-container:
+    image: ubuntu:22.04
+    container_name: vulnerable-container
+    command: sleep infinity
+    volumes:
+      # ⚠️ CRITICAL VULNERABILITY: Docker socket mounted
+      # This allows the container to control the Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "lab=09-runtime-escape"
+      - "scenario=docker-socket"
+      - "severity=critical"
+    # Note: Even without --privileged, this container can escape!
+    # The docker socket access is enough for full compromise

@@ -1,0 +1,7 @@
+# Ignore all generated artifacts
+scenario-*/artifacts/*.log
+scenario-*/artifacts/*.txt
+scenario-*/artifacts/*.json
+
+# But keep the artifacts directory structure
+!scenario-*/artifacts/.gitkeep

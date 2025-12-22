@@ -241,6 +241,32 @@ Advanced labs covering supply chain security and comprehensive network security.
 - Real-world production patterns
 
 ---
+### Level 3: Attack & Defense (NEW)
+
+Advanced labs demonstrating real container escape techniques.
+
+---
+
+### [Lab 09: Docker Runtime Escape](./labs/09-runtime-escape/)
+
+**What You'll Learn:**
+- Real container escape techniques used by attackers
+- Docker socket vulnerability exploitation
+- Complete attack demonstration with forensic analysis
+- Runtime security detection patterns
+
+**Key Scenarios:**
+- **Docker Socket Escape** ✅ (Available now - most common production attack)
+- Privileged Container Escape (Coming soon)
+- Additional advanced techniques (Coming soon)
+
+**Time:** 30-45 minutes (automated) or 2+ hours (manual exploration)
+
+**Why This Matters:**
+This lab demonstrates runtime failure modes that static scanning, CIS benchmarks, and image analysis cannot detect or prevent. Shows what happens AFTER a container is deployed with dangerous configurations.
+
+---
+
 
 ## 🚀 Getting Started
 
