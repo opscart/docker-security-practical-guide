@@ -1,0 +1,148 @@
+# Docker Compose Configuration for Socket Proxy Test
+#
+# This sets up a socket proxy to prevent Docker socket escape attacks
+# while still allowing read-only monitoring access.
+#
+# ═══════════════════════════════════════════════════════════════
+# USAGE INSTRUCTIONS
+# ═══════════════════════════════════════════════════════════════
+#
+# 1. START THE SERVICES:
+#    docker-compose up -d
+#
+# 2. VERIFY SERVICES ARE RUNNING:
+#    docker-compose ps
+#    # Should show: socket-proxy (Up) and test-app-proxy (Up)
+#
+# 3. CHECK LOGS:
+#    docker-compose logs
+#    # Or for specific service:
+#    docker-compose logs socket-proxy
+#    docker-compose logs test-app-proxy
+#
+# 4. TEST THE SETUP:
+#
+#    A. Access the test container:
+#       docker-compose exec test-app bash
+#
+#    B. Install Docker CLI (inside container):
+#       apt-get update -qq && apt-get install -y docker.io
+#
+#    C. Test read operations (should WORK):
+#       docker ps
+#       docker info
+#       docker images
+#
+#    D. Test write operations (should FAIL):
+#       docker run --privileged ubuntu
+#       # Expected: 403 Forbidden
+#
+#    E. Exit container:
+#       exit
+#
+# 5. VIEW PROXY LOGS (see what was blocked):
+#    docker-compose logs socket-proxy | grep -i "403\|forbidden"
+#
+# 6. STOP SERVICES (keeps data):
+#    docker-compose stop
+#
+# 7. RESTART SERVICES:
+#    docker-compose start
+#
+# 8. CLEANUP EVERYTHING:
+#    docker-compose down -v
+#    # The -v flag removes volumes too
+#
+# 9. FULL CLEANUP (remove networks too):
+#    docker-compose down -v --remove-orphans
+#
+# ═══════════════════════════════════════════════════════════════
+# QUICK REFERENCE COMMANDS
+# ═══════════════════════════════════════════════════════════════
+#
+# See running services:     docker-compose ps
+# See logs (live):          docker-compose logs -f
+# Exec into test app:       docker-compose exec test-app bash
+# Stop services:            docker-compose stop
+# Start services:           docker-compose start
+# Full cleanup:             docker-compose down -v
+#
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # Socket proxy with restricted permissions
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: socket-proxy
+    environment:
+      # Allow read operations (monitoring use cases)
+      CONTAINERS: 1        # Can list containers
+      IMAGES: 1            # Can list images  
+      VOLUMES: 1           # Can list volumes
+      NETWORKS: 1          # Can list networks
+      INFO: 1              # Can get system info
+      VERSION: 1           # Can get Docker version
+      
+      # Deny write operations (CRITICAL - blocks attacks)
+      POST: 0              # Cannot create containers/images
+      DELETE: 0            # Cannot delete resources
+      BUILD: 0             # Cannot build images
+      COMMIT: 0            # Cannot commit containers
+      EXEC: 0              # Cannot exec commands
+      
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    labels:
+      - "lab=09-runtime-escape"
+      - "scenario=prevention-socket-proxy"
+      - "description=Proxy that filters Docker API calls"
+
+  # Test application - uses proxy instead of direct socket
+  test-app:
+    image: ubuntu:22.04
+    container_name: test-app-proxy
+    command: sleep infinity
+    environment:
+      # Point to proxy, not real socket
+      DOCKER_HOST: tcp://socket-proxy:2375
+    networks:
+      - proxy-net
+    labels:
+      - "lab=09-runtime-escape"
+      - "scenario=prevention-socket-proxy"
+      - "description=Test container using socket proxy"
+    depends_on:
+      - socket-proxy
+
+networks:
+  proxy-net:
+    driver: bridge
+    labels:
+      - "lab=09-runtime-escape"
+
+# ═══════════════════════════════════════════════════════════════
+# TROUBLESHOOTING
+# ═══════════════════════════════════════════════════════════════
+#
+# Services won't start:
+#   - Check if ports are in use: docker ps
+#   - Check Docker daemon is running: docker info
+#   - View detailed logs: docker-compose logs
+#
+# Proxy not blocking:
+#   - Verify environment variables: docker-compose config
+#   - Check test-app DOCKER_HOST: docker exec test-app-proxy env | grep DOCKER
+#   - Review proxy logs: docker-compose logs socket-proxy
+#
+# Cannot access test-app:
+#   - Check if running: docker-compose ps
+#   - Try restart: docker-compose restart test-app
+#
+# Need to reset everything:
+#   docker-compose down -v
+#   docker-compose up -d
+#
+# ═══════════════════════════════════════════════════════════════

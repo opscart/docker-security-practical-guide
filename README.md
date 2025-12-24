@@ -243,7 +243,8 @@ Advanced labs covering supply chain security and comprehensive network security.
 ---
 ### Level 3: Attack & Defense (NEW)
 
-Advanced labs demonstrating real container escape techniques.
+Advanced labs demonstrating real container escape techniques **and tested prevention methods**.
+📌 This lab is standalone. You can complete the core scenario independently before exploring additional variants in the repo.
 
 ---
 
@@ -254,16 +255,32 @@ Advanced labs demonstrating real container escape techniques.
 - Docker socket vulnerability exploitation
 - Complete attack demonstration with forensic analysis
 - Runtime security detection patterns
+- **Tested prevention methods that actually work** ✨ NEW
 
 **Key Scenarios:**
 - **Docker Socket Escape** ✅ (Available now - most common production attack)
+  - Attack demonstration with automated exploit
+  - Detection signatures and forensic artifacts
+  - **Three tested prevention methods** ✨ NEW
+    - Socket Proxy (blocks dangerous API calls)
+    - Kaniko (builds images without socket)
+    - Rootless Docker (limits blast radius)
 - Privileged Container Escape (Coming soon)
 - Additional advanced techniques (Coming soon)
 
-**Time:** 30-45 minutes (automated) or 2+ hours (manual exploration)
+**Time:** 
+- Attack demonstration: 30-45 minutes (automated) or 2+ hours (manual exploration)
+- Prevention testing: 30-45 minutes (optional, recommended)
 
 **Why This Matters:**
-This lab demonstrates runtime failure modes that static scanning, CIS benchmarks, and image analysis cannot detect or prevent. Shows what happens AFTER a container is deployed with dangerous configurations.
+This lab demonstrates runtime failure modes that static scanning, CIS benchmarks, and image analysis cannot detect or prevent. Shows what happens AFTER a container is deployed with dangerous configurations. **Now includes practical solutions to prevent these attacks in production.**
+
+**Complete Workflow:**
+1. Run the attack → See complete host compromise
+2. Review detection artifacts → Understand IOCs and signatures
+3. **Test prevention methods → Verify what actually stops the attack** ✨ NEW
+
+> ⚠️ *This lab demonstrates real attack techniques — use only in isolated test environments (local VM, Docker Desktop test project, etc.). Do **not** run in production or shared environments.*
 
 ---
 
