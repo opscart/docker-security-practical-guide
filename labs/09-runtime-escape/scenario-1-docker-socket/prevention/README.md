@@ -1,4 +1,4 @@
-# Scenario 6: Prevention Methods Testing
+# Scenario 1: Prevention Methods Testing
 
 **Purpose:** Test and validate three different approaches to prevent docker socket escape attacks
 
@@ -176,8 +176,6 @@ This scenario builds on Scenario 1 by testing if these prevention methods actual
 - Demonstrated the attack
 - Generated IOCs and detection signatures
 - Showed impact
-
-**Scenario 6:**
 - Tests prevention against the same attack
 - Validates configurations work in practice
 - Provides ready-to-use solutions

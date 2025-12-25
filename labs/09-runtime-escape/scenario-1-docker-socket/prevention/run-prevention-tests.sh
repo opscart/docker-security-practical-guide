@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Scenario 6: Prevention Methods Testing
+# Scenario 1: Prevention Methods Testing
 # Tests three different approaches to prevent docker socket escape
 
 set -e
@@ -15,9 +15,9 @@ echo -e "${BLUE}"
 cat << "EOF"
 ╔══════════════════════════════════════════════════════╗
 ║                                                      ║
-║   Scenario 6: Prevention Testing                    ║
+║   Scenario 1: Prevention Testing                     ║
 ║                                                      ║
-║   Testing three approaches to prevent socket escape ║
+║   Testing three approaches to prevent socket escape  ║
 ║                                                      ║
 ╚══════════════════════════════════════════════════════╝
 EOF

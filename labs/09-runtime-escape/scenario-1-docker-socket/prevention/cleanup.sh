@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Cleanup script for Scenario 6: Prevention Tests
+# Cleanup script for Scenario 1: Prevention Tests
 
 set -e
 
