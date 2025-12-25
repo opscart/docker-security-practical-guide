@@ -1,14 +1,20 @@
-# Ignore artifacts from test runs (except examples)
-# Users will generate their own
+# Ignore test artifacts (users generate their own when running tests)
 
-# But keep example artifacts for documentation
-!test-1-socket-proxy/artifacts/
-!test-2-kaniko/artifacts/
-!test-3-rootless/artifacts/
+# Test artifacts directories
+test-1-socket-proxy/artifacts/
+test-2-kaniko/artifacts/
+test-3-rootless/artifacts/
 
-# Ignore test result logs (regenerated each run)
-test-results.txt
+# Test result logs (regenerated each run)
+test-1-socket-proxy/test-results.txt
+test-2-kaniko/test-results.txt
+test-3-rootless/test-results.txt
 
-# Ignore generated files
-*.tar
-Dockerfile
+# Kaniko generated files
+test-2-kaniko/*.tar
+test-2-kaniko/Dockerfile
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
