@@ -375,7 +375,7 @@ docker ps -a --format "{{.CreatedAt}} {{.Names}} {{.Image}}"
 # Use socket proxy with ACL
 ```
 
-**2. Use Docker Socket Proxy**
+**2. Use Docker Socket Proxy** ✅ TESTED
 ```yaml
 services:
   docker-proxy:
@@ -394,21 +394,60 @@ services:
     # No direct socket access!
 ```
 
-**3. Use Rootless Docker**
+**Test this yourself:** See [prevention/test-1-socket-proxy](prevention/test-1-socket-proxy/) for working configuration and test results.
+
+**3. Build Images Without Socket (Kaniko)** ✅ TESTED
+```bash
+# Instead of docker build with socket mount
+docker run --rm \
+  -v $(pwd):/workspace \
+  gcr.io/kaniko-project/executor:latest \
+  --context=/workspace \
+  --dockerfile=Dockerfile \
+  --destination=myimage:latest
+# No socket mount needed!
+```
+
+**Test this yourself:** See [prevention/test-2-kaniko](prevention/test-2-kaniko/) for build examples and test results.
+
+**4. Use Rootless Docker** ✅ TESTED
 ```bash
 # Install rootless Docker
-dockerd-rootless-setuptool.sh install
+curl -fsSL https://get.docker.com/rootless | sh
 
 # Docker daemon runs as non-root user
 # Even if escaped, attacker is not root
 ```
 
-**4. Enable Docker Authorization Plugins**
+**Understand the impact:** See [prevention/test-3-rootless](prevention/test-3-rootless/) for root vs rootless comparison.
+
+**5. Enable Docker Authorization Plugins**
 ```json
 {
   "authorization-plugins": ["authz-broker"]
 }
 ```
+
+### Prevention Testing Suite
+
+Want to verify these mitigations actually work? We've tested them all.
+
+**Location:** `prevention/` directory
+
+**Quick Start:**
+```bash
+cd prevention
+./run-prevention-tests.sh
+```
+
+**What Gets Tested:**
+- ✅ Socket Proxy blocks attacks while allowing monitoring (Test 1)
+- ✅ Kaniko builds images without socket access (Test 2)
+- ✅ Rootless Docker limits escape impact (Test 3)
+
+**Results:** Each test generates artifacts showing real results, error messages, and proof the prevention works.
+
+**Documentation:** See [prevention/README.md](prevention/README.md) for complete details, manual verification guides, and implementation recommendations.
 
 ### Long-Term Solutions (Advanced Hardening)
 

@@ -46,20 +46,20 @@ echo -e "${NC}"
 
 log "Starting rootless Docker simulation test..."
 
-# Test 1: Show current user context
-log "TEST 1: Showing current Docker daemon user context..."
+# STEP 1: Show current user context
+log "STEP 1: Showing current Docker daemon user context..."
 echo ""
 echo -e "${YELLOW}Current Docker daemon is running as:${NC}"
 docker info 2>/dev/null | grep -A 2 "Server Version" | tee "$ARTIFACTS_DIR/docker-daemon-info.txt"
 
-# Test 2: Simulate the escape with user restrictions
-log "TEST 2: Simulating escape attempt with non-root restrictions..."
+# STEP 2: Simulate the escape with user restrictions
+log "STEP 2: Simulating escape attempt with non-root restrictions..."
 
 cat > "$ARTIFACTS_DIR/comparison.txt" << 'COMPARISON'
 Rootless Docker Impact Comparison
 ==================================
 
-SCENARIO 1: Standard Docker (root daemon)
+1: Standard Docker (root daemon)
 ------------------------------------------
 When escape succeeds:
 ✗ Attacker lands as: root
@@ -73,7 +73,7 @@ Example commands that work:
   echo "backdoor" >> /etc/crontab  # Works - can modify
   useradd -m attacker              # Works - can create users
 
-SCENARIO 2: Rootless Docker (non-root daemon)
+2: Rootless Docker (non-root daemon)
 ----------------------------------------------
 When escape succeeds:
 ✓ Attacker lands as: regular user (e.g., 'jenkins')
@@ -98,8 +98,8 @@ COMPARISON
 
 cat "$ARTIFACTS_DIR/comparison.txt"
 
-# Test 3: Demonstrate permission differences
-log "TEST 3: Testing permission differences..."
+# STEP 3: Demonstrate permission differences
+log "STEP 3: Testing permission differences..."
 
 echo ""
 echo -e "${BLUE}Standard Docker (root) - What attacker can do:${NC}"

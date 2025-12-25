@@ -371,15 +371,41 @@ Linux has 38 capabilities. Here's what matters for escapes:
 
 ## 🛡️ Prevention Overview
 
-**Quick Reference** (Detailed hardening in future articles):
+**Quick Reference:**
 
-| Attack Vector | Prevention |
-|---------------|------------|
-| Docker Socket | Never mount socket; use alternatives |
-| Privileged Mode | Never use; break down requirements |
-| CAP_SYS_ADMIN | Drop all caps; add only needed ones |
-| Host Mounts | Use volumes; avoid sensitive paths |
-| /proc Access | Read-only; limit exposure |
+| Attack Vector | Prevention | Tested Implementation |
+|---------------|------------|----------------------|
+| Docker Socket | Never mount socket; use alternatives | ✅ [scenario-1/prevention](scenario-1-docker-socket/prevention/) |
+| Privileged Mode | Never use; break down requirements | Coming soon |
+| CAP_SYS_ADMIN | Drop all caps; add only needed ones | Coming soon |
+| Host Mounts | Use volumes; avoid sensitive paths | Coming soon |
+| /proc Access | Read-only; limit exposure | Coming soon |
+
+### Tested Prevention Methods (Scenario 1)
+
+**Location:** `scenario-1-docker-socket/prevention/`
+
+Three prevention methods have been tested with real results:
+
+**1. Socket Proxy** (10 min)
+- Blocks container creation while allowing monitoring
+- Real test shows: docker ps ✓ works, docker run --privileged ✗ blocked with 403
+
+**2. Kaniko** (15 min)
+- Builds images without Docker daemon
+- Real test shows: 22-second build, 207MB image, zero socket access
+
+**3. Rootless Docker** (5 min)
+- Limits damage if escape succeeds
+- Real test shows: attacker lands as non-root, cannot access /etc/shadow
+
+**Quick Start:**
+```bash
+cd scenario-1-docker-socket/prevention
+./run-prevention-tests.sh
+```
+
+**Complete documentation, test artifacts, and manual verification guides available in the prevention directory.**
 
 ## 🔗 Integration with Other Labs
 
