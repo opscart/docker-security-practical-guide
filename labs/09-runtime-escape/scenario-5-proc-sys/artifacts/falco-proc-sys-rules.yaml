@@ -1,0 +1,77 @@
+# Falco rules for detecting /proc and /sys reconnaissance
+# Deploy: kubectl create cm falco-rules-proc-sys --from-file=rules.yaml=$FALCO_RULES -n falco
+
+# Rule 1: Detect reading of other processes' command lines
+- rule: Container Process Enumeration via /proc
+  desc: >
+    A container read another process's cmdline via /proc.
+    This indicates reconnaissance — mapping running services on the host.
+  condition: >
+    container and
+    open and
+    fd.name pmatch (/proc/[0-9]*/cmdline, /host-proc/[0-9]*/cmdline) and
+    not container.privileged
+  output: >
+    Process cmdline enumeration via /proc detected
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: HIGH
+  tags: [container, proc, reconnaissance]
+
+# Rule 2: Detect reading of network configuration via /proc
+- rule: Container Network Reconnaissance via /proc
+  desc: >
+    A container read network routing or connection data from /proc.
+    This enables internal network mapping and lateral movement planning.
+  condition: >
+    container and
+    open and
+    (fd.name startswith /proc/net or
+     fd.name startswith /host-proc/net or
+     fd.name = /proc/net/route or
+     fd.name = /host-proc/net/route or
+     fd.name = /proc/net/tcp or
+     fd.name = /host-proc/net/tcp)
+  output: >
+    Network reconnaissance via /proc detected
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: MEDIUM
+  tags: [container, proc, network, reconnaissance]
+
+# Rule 3: Detect /sys access for hardware enumeration
+- rule: Container Hardware Enumeration via /sys
+  desc: >
+    A container accessed hardware information through /sys.
+    This enables cloud provider identification and hardware profiling.
+  condition: >
+    container and
+    open and
+    (fd.name startswith /sys/class or
+     fd.name startswith /host-sys/class or
+     fd.name startswith /sys/devices or
+     fd.name startswith /host-sys/devices) and
+    not container.privileged
+  output: >
+    Hardware enumeration via /sys detected
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: LOW
+  tags: [container, sys, hardware, reconnaissance]
+
+# Rule 4: Detect bulk /proc scanning (reading many PIDs rapidly)
+- rule: Container Bulk /proc Scanning
+  desc: >
+    A container is rapidly reading multiple /proc/[pid] entries.
+    This pattern indicates automated process enumeration — a reconnaissance sweep.
+  condition: >
+    container and
+    open and
+    fd.name pmatch (/proc/[0-9]*/status, /host-proc/[0-9]*/status) and
+    count(fd.name pmatch (/proc/[0-9]*/status, /host-proc/[0-9]*/status)) > 10
+  output: >
+    Bulk /proc scanning detected — automated reconnaissance
+    (user=%user.name container_id=%container.id container_name=%container.name
+    files_accessed=%evt.num command=%proc.cmdline)
+  priority: HIGH
+  tags: [container, proc, reconnaissance, scanning]

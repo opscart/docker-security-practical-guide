@@ -1,0 +1,147 @@
+# Falco Rules for CAP_SYS_ADMIN Container Escape Detection (Docker)
+# File: falco-docker-sys-admin-rules.yaml
+#
+# These rules detect when CAP_SYS_ADMIN capability is being abused
+# for container escape attempts in Docker environments.
+#
+# Installation:
+#   1. Install Falco: curl -s https://falco.org/script/install | sudo bash
+#   2. Add rules: sudo cp falco-docker-sys-admin-rules.yaml /etc/falco/rules.d/
+#   3. Restart Falco: sudo systemctl restart falco
+#
+# Test detection:
+#   docker run --cap-add=SYS_ADMIN alpine mount
+
+- rule: Container Mount Operation Detected
+  desc: Detect filesystem mount operations in non-privileged Docker containers
+  condition: >
+    spawned_process and
+    container and
+    container.privileged = false and
+    proc.name = mount and
+    not proc.pname in (dockerd, containerd, containerd-shim, runc)
+  output: >
+    Mount operation detected in non-privileged container - possible CAP_SYS_ADMIN abuse
+    (user=%user.name container_id=%container.id container_name=%container.name
+    image=%container.image.repository command=%proc.cmdline parent=%proc.pname)
+  priority: WARNING
+  tags: [container, filesystem, sys_admin, docker, T1611]
+  source: syscall
+
+- rule: Container Namespace Manipulation
+  desc: Detect nsenter or unshare usage in Docker containers
+  condition: >
+    spawned_process and
+    container and
+    proc.name in (nsenter, unshare) and
+    not container.privileged = true
+  output: >
+    Namespace manipulation tool detected in Docker container
+    (user=%user.name container_id=%container.id container_name=%container.name
+    image=%container.image.repository command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, namespace, escape, sys_admin, docker, T1611]
+  source: syscall
+
+- rule: Cgroup Release Agent Modification
+  desc: Detect modification of cgroup release_agent (Felix Wilhelm escape)
+  condition: >
+    open_write and
+    container and
+    fd.name contains "release_agent" and
+    fd.name startswith /sys/fs/cgroup
+  output: >
+    Cgroup release_agent modification detected in Docker container - classic escape attempt
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, cgroup, escape, sys_admin, docker, T1611]
+  source: syscall
+
+- rule: Container Accessing Host Block Devices
+  desc: Detect when Docker container accesses host block devices
+  condition: >
+    open and
+    container and
+    fd.name startswith /dev/ and
+    fd.name pmatch (/dev/sd*, /dev/vd*, /dev/nvme*, /dev/xvd*, /dev/hd*)
+  output: >
+    Docker container accessing host block device - possible mount escape attempt
+    (user=%user.name container_id=%container.id container_name=%container.name
+    device=%fd.name command=%proc.cmdline)
+  priority: WARNING
+  tags: [container, device, sys_admin, docker, T1611]
+  source: syscall
+
+- rule: Container Cgroup Mount Operation
+  desc: Detect cgroup mounting inside Docker container
+  condition: >
+    spawned_process and
+    container and
+    proc.name = mount and
+    proc.cmdline contains "cgroup"
+  output: >
+    Cgroup mount detected in Docker container - possible escape preparation
+    (user=%user.name container_id=%container.id container_name=%container.name
+    command=%proc.cmdline)
+  priority: WARNING
+  tags: [container, cgroup, mount, sys_admin, docker, T1611]
+  source: syscall
+
+- rule: Sensitive File Access from Container
+  desc: Detect Docker container accessing sensitive host files
+  condition: >
+    open_read and
+    container and
+    (fd.name in (/etc/shadow, /etc/sudoers, /root/.ssh/id_rsa, /root/.ssh/id_ed25519) or
+     fd.name startswith /etc/docker/)
+  output: >
+    Docker container accessing sensitive host file - possible post-escape activity
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, sensitive_files, post_escape, docker, T1552]
+  source: syscall
+
+- rule: Container Modifying Host Filesystem
+  desc: Detect Docker container writing to critical host paths
+  condition: >
+    open_write and
+    container and
+    (fd.name startswith /etc/ or
+     fd.name startswith /root/ or
+     fd.name startswith /usr/bin/ or
+     fd.name startswith /usr/sbin/)
+  output: >
+    Docker container modifying critical host path - possible backdoor installation
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, host_modification, backdoor, docker, T1546]
+  source: syscall
+
+- rule: Docker Socket Access from Container
+  desc: Detect container accessing Docker socket (different scenario but related)
+  condition: >
+    open and
+    container and
+    fd.name = /var/run/docker.sock
+  output: >
+    Docker container accessing docker.sock - critical escape vector
+    (user=%user.name container_id=%container.id container_name=%container.name
+    command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, docker_socket, escape, docker, T1611]
+  source: syscall
+
+# Whitelist examples (uncomment and customize as needed)
+# - list: allowed_mount_containers
+#   items: [backup-agent, monitoring-tool]
+#
+# - rule: Container Mount Operation Detected
+#   exceptions:
+#   - name: allowed_containers
+#     fields: [container.name]
+#     comps: [in]
+#     values:
+#     - [allowed_mount_containers]

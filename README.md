@@ -241,49 +241,62 @@ Advanced labs covering supply chain security and comprehensive network security.
 - Real-world production patterns
 
 ---
-### Level 3: Attack & Defense (NEW)
 
-Advanced labs demonstrating real container escape techniques **and tested prevention methods**.
-📌 This lab is standalone. You can complete the core scenario independently before exploring additional variants in the repo.
+### Level 3: Red Team / Offensive Security (Lab 09)
+
+Hands-on container escape scenarios — understanding how attackers break out of containers.
 
 ---
 
-### [Lab 09: Docker Runtime Escape](./labs/09-runtime-escape/)
+### [Lab 09: Docker Runtime Escape (5 Scenarios)](./labs/09-runtime-escape/)
 
 **What You'll Learn:**
-- Real container escape techniques used by attackers
-- Docker socket vulnerability exploitation
-- Complete attack demonstration with forensic analysis
-- Runtime security detection patterns
-- **Tested prevention methods that actually work** ✨ NEW
+- Execute 5 real container escape techniques in a controlled environment
+- Understand why blocking docker.sock alone is not sufficient
+- Implement runtime detection with Falco and admission control with Kyverno
+- Audit containers for dangerous configurations that standard scans miss
 
-**Key Scenarios:**
-- **Docker Socket Escape** ✅ (Available now - most common production attack)
-  - Attack demonstration with automated exploit
-  - Detection signatures and forensic artifacts
-  - **Three tested prevention methods** ✨ NEW
-    - Socket Proxy (blocks dangerous API calls)
-    - Kaniko (builds images without socket)
-    - Rootless Docker (limits blast radius)
-- Privileged Container Escape (Coming soon)
-- Additional advanced techniques (Coming soon)
+**5 Escape Scenarios:**
 
-**Time:** 
-- Attack demonstration: 30-45 minutes (automated) or 2+ hours (manual exploration)
-- Prevention testing: 30-45 minutes (optional, recommended)
+**Scenario 1: Docker Socket Escape** (25 min)
+- Mount docker.sock → install Docker CLI → create privileged container → mount host / → chroot to host root
+- The most common escape in production (Jenkins, Portainer, DinD, Watchtower)
+
+**Scenario 2: Privileged Container Escape** (15 min)
+- 5 demonstrations: capability comparison, host filesystem via block device, network namespace escape, cgroup release_agent (Felix Wilhelm technique), detection
+- `--privileged` disables every security boundary simultaneously
+
+**Scenario 3: CAP_SYS_ADMIN Abuse** (20 min)
+- Single capability that enables 30+ system operations including mount and namespace manipulation
+- Passes standard security audits (`Privileged: false`) while providing near-privileged access
+
+**Scenario 4: Host Path Mount Abuse** (15 min)
+- `/etc` bind mount reads credentials directly; docker.sock escalation chain (two containers cooperating)
+- Risk-classified audit: CRITICAL (docker.sock), HIGH (/etc), MEDIUM (system paths)
+
+**Scenario 5: /proc and /sys Exposure** (15 min)
+- Reconnaissance: kernel version → CVE targeting, network data → lateral movement, process list → service discovery
+- Read-only mounts prevent writes but not information disclosure
+
+**Key Concepts:**
+- Container isolation boundaries and how each is broken
+- The audit gap: what scanners check vs what attackers exploit
+- Defense-in-depth: Falco rules, Kyverno admission policies, audit scripts
+- Docker Desktop vs Linux host behavioral differences
+
+**Defense Artifacts Generated:**
+- Falco runtime detection rules (Scenarios 3, 4, 5)
+- Kyverno admission policies (Scenarios 4, 5)
+- Audit scripts with risk classification (Scenarios 2, 3, 4, 5)
+
+**Time:** 2-2.5 hours (all scenarios) or 15-25 minutes each
 
 **Why This Matters:**
-This lab demonstrates runtime failure modes that static scanning, CIS benchmarks, and image analysis cannot detect or prevent. Shows what happens AFTER a container is deployed with dangerous configurations. **Now includes practical solutions to prevent these attacks in production.**
-
-**Complete Workflow:**
-1. Run the attack → See complete host compromise
-2. Review detection artifacts → Understand IOCs and signatures
-3. **Test prevention methods → Verify what actually stops the attack** ✨ NEW
-
-> ⚠️ *This lab demonstrates real attack techniques — use only in isolated test environments (local VM, Docker Desktop test project, etc.). Do **not** run in production or shared environments.*
+- Blocking docker.sock and --privileged is necessary but not sufficient
+- CAP_SYS_ADMIN, host mounts, and /proc are the blind spots attackers use next
+- Runtime detection rules generated here are production-ready
 
 ---
-
 
 ## 🚀 Getting Started
 
@@ -397,11 +410,18 @@ Lab 08: Network Security
          (5 Scenarios: Isolation to Encryption)
 ```
 
+### Level 3: Red Team
+```
+Lab 09: Runtime Escape
+         (5 Scenarios: Socket to /proc)
+```
+
 **Estimated Time:** 
 - Level 1 (Labs 01-06): 4-6 hours
 - Level 2 (Labs 07-08): 2-3 hours
-- Complete guide: 6-9 hours
-- With practice exercises: 10-15 hours
+- Level 3 (Lab 09): 2-2.5 hours
+- Complete guide: 8-11.5 hours
+- With practice exercises: 12-17 hours
 
 ## 🛠️ Tools & Technologies
 
@@ -624,8 +644,9 @@ Track your progress:
 - [ ] Lab 06: AI/ML Security ⏱️ 60-90 min
 - [ ] Lab 07: Supply Chain Security (SBOM) ⏱️ 45-60 min
 - [ ] Lab 08: Network Security (5 Scenarios) ⏱️ 18-22 min
+- [ ] Lab 09: Runtime Escape (5 Scenarios) ⏱️ 2-2.5 hrs
 
-**Total Time:** 6-9 hours
+**Total Time:** 8-11.5 hours
 
 ## 📜 License
 
@@ -645,6 +666,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 - **Author**: Shamsher Khan
 - **GitHub**: [@opscart](https://github.com/opscart)
+- **Blog**: [@OpsCart](https://opscart.com)
 - **Issues**: [Report issues](https://github.com/opscart/docker-security-practical-guide/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/opscart/docker-security-practical-guide/discussions)
 
@@ -670,10 +692,10 @@ If you find this guide helpful:
 
 ### Upcoming Labs (Planned)
 
-- **Lab 09**: Secrets Management with HashiCorp Vault
 - **Lab 10**: Runtime Security with Falco
 - **Lab 11**: Kubernetes Security Fundamentals
 - **Lab 12**: Container Registry Security
+- **Lab 13**: Secrets Management with HashiCorp Vault
 
 ### Stay Updated
 

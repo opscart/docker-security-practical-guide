@@ -1,0 +1,36 @@
+# Kyverno policy to block dangerous host path mounts
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-host-path-mounts
+  annotations:
+    policies.kyverno.io/title: Restrict Host Path Mounts
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: >-
+      Blocks pods from mounting sensitive host paths via hostPath volumes.
+      Host path mounts expose the underlying node filesystem and can be
+      used for credential theft or privilege escalation.
+
+spec:
+  validationFailureAction: enforce
+  background: true
+
+  rules:
+  - name: check-host-path-mounts
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+
+    validate:
+      message: >-
+        Mounting sensitive host paths is not allowed.
+        Use ConfigMap, Secret, or emptyDir volumes instead.
+        Blocked paths: /etc, /root, /home, /var/run/docker.sock, /proc, /sys, /
+      pattern:
+        spec:
+          volumes:
+          - X-(hostPath):
+              path: "?(/allowed-path/*)"

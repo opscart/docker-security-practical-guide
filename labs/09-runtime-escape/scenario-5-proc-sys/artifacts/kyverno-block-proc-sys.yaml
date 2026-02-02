@@ -1,0 +1,44 @@
+# Kyverno policy to block /proc and /sys hostPath mounts
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-proc-sys-mounts
+  annotations:
+    policies.kyverno.io/title: Restrict /proc and /sys Mounts
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Blocks pods from mounting /proc or /sys via hostPath volumes.
+      These mounts expose kernel interfaces and enable system reconnaissance.
+      If specific /proc data is needed (e.g., /proc/meminfo), mount only
+      the individual file, not the entire directory.
+
+spec:
+  validationFailureAction: enforce
+  background: true
+
+  rules:
+  - name: check-proc-mount
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+
+    validate:
+      message: >-
+        Mounting /proc or /sys via hostPath is not allowed.
+        If you need specific data (e.g., /proc/meminfo), mount only
+        that individual file: hostPath.path: /proc/meminfo
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.volumes[].hostPath.path }}"
+            operator: Equals
+            value: "/proc"
+          - key: "{{ request.object.spec.volumes[].hostPath.path }}"
+            operator: Equals
+            value: "/sys"
+          - key: "{{ request.object.spec.volumes[].hostPath.path }}"
+            operator: Equals
+            value: "/proc/net"

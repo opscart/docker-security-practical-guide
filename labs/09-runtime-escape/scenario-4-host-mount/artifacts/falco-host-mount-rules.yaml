@@ -1,0 +1,72 @@
+# Falco rules for detecting dangerous bind mounts
+# Deploy: kubectl create cm falco-rules-host-mount --from-file=rules.yaml=$FALCO_RULES -n falco
+
+# Rule 1: Detect access to sensitive host paths via bind mount
+- rule: Container Accessing Sensitive Host Path
+  desc: >
+    A container accessed a file in a sensitive host path mounted via bind mount.
+    This may indicate credential theft or configuration tampering.
+  condition: >
+    container and
+    (open or openat) and
+    not container.privileged and
+    fd.name startswith /host-etc or
+    fd.name startswith /host-root or
+    fd.name startswith /host-home
+  output: >
+    Sensitive host path accessed in container
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: HIGH
+  tags: [container, bind-mount, credential-access]
+
+# Rule 2: Detect docker.sock access from containers
+- rule: Container Docker Socket Access
+  desc: >
+    A container accessed the Docker socket. This enables the container
+    to create or modify other containers on the host.
+  condition: >
+    container and
+    (open or openat) and
+    fd.name = /var/run/docker.sock
+  output: >
+    Docker socket accessed from container
+    (user=%user.name container_id=%container.id container_name=%container.name
+    command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, docker-sock, escalation]
+
+# Rule 3: Detect new container creation via socket (escalation chain)
+- rule: Container Creating New Containers
+  desc: >
+    A container executed the docker CLI, likely using a mounted socket
+    to create new containers. This is the escalation chain pattern.
+  condition: >
+    spawned_process and
+    container and
+    proc.name = docker and
+    proc.args contains "run"
+  output: >
+    Container executing docker run — possible escalation chain
+    (user=%user.name container_id=%container.id container_name=%container.name
+    command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, docker-sock, escalation, bind-mount]
+
+# Rule 4: Detect reading of /etc/shadow via any path
+- rule: Container Shadow File Read
+  desc: >
+    A container read /etc/shadow or a bind-mounted copy of it.
+    This indicates credential theft.
+  condition: >
+    container and
+    open and
+    (fd.name = /etc/shadow or
+     fd.name endswith /shadow) and
+    not proc.name in (pam_authenticate, getent, passwd)
+  output: >
+    Shadow file read in container — credential theft attempt
+    (user=%user.name container_id=%container.id container_name=%container.name
+    file=%fd.name command=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, credential, shadow, bind-mount]
