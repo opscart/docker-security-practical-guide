@@ -17,6 +17,45 @@ This guide takes you from basic Docker security concepts to advanced hardening t
 - **Supply Chain Security**: SBOM generation and vulnerability scanning
 - **Network Architecture**: Multi-tier segmentation and encryption
 
+## 🌐 OpsCart Labs Platform
+
+This Docker Security guide is part of the **OpsCart Labs** collection — production-grade hands-on labs built from real Fortune 500 retail & pharmaceutical cluster experience.
+
+**Visit [OpsCart Labs](https://opscart.com/labs/)** for:
+- **70+ Total Labs** across 2 lab series
+- **~60 Hours** of hands-on content
+- **GitHub-Backed** — All labs available as open source
+- **Automated Validation** — Exam tips, real scenarios, war-room notes
+
+### Available Lab Series
+
+**🔐 Docker Security: Practical Guide** (This Repository)
+- Runtime escape, secrets management, image hardening, and secret management
+- 10 labs covering CIS benchmarks to production security patterns
+- **Status:** Active development
+
+**☸️ Certified Kubernetes Administrator Exam Prep** ([production-cka](https://github.com/opscart/production-cka))
+- 70 hands-on labs covering every CKA exam domain
+- Automated validation scripts, real exam tips, Fortune 500 cluster notes
+- Cluster Arch 25% • Networking 20% • Workloads 15% • Storage 10% • Troubleshooting 30%
+- **Status:** 5/70 labs complete
+
+**🎯 Kubernetes Practical Exercises** (Coming Soon)
+- Focused exercises covering core Kubernetes concepts
+- Ideal for engineers who want to sharpen specific skills without full exam prep
+- Pods & Workloads • Networking • Storage • Debugging
+
+### Why OpsCart Labs?
+
+**Production-Grade** — Built from managing 8+ production AKS clusters  
+**Real Scenarios** — Fortune 500 pharmaceutical & retail experience  
+**GitHub-First** — All content open source and version controlled  
+**Practitioner Authority** — IEEE Senior Member, DZone Core Member, CNCF contributor  
+
+**Explore all labs:** [opscart.com/labs](https://opscart.com/labs/)
+
+---
+
 ## 📚 Lab Structure
 
 ### Level 1: Fundamentals (Labs 01-06)
@@ -298,6 +337,86 @@ Hands-on container escape scenarios — understanding how attackers break out of
 
 ---
 
+### Level 4: Production Security (Lab 10)
+
+Advanced production security patterns for secret management.
+
+---
+
+### [Lab 10: Docker Secrets Management (5 Scenarios)](./labs/10-secrets-management/)
+
+**What You'll Learn:**
+- Identify 5 common secret leakage patterns in Docker environments
+- Implement Docker Swarm native secrets with encrypted storage
+- Integrate HashiCorp Vault for centralized secret management
+- Use BuildKit secret mounts for build-time credentials
+- Scan repositories for leaked secrets with automated tools
+- Prevent secret commits using pre-commit hooks and CI/CD integration
+
+**Key Concepts:**
+- Anti-patterns: hardcoded secrets, ENV vars, build args, git history leaks
+- Docker Swarm secrets: encrypted at rest, in-memory tmpfs mounts
+- External secret management: Vault dev mode and production patterns
+- BuildKit secret mounts: build-time secrets that never persist
+- Secret scanning: GitLeaks, pre-commit hooks, CI/CD integration
+
+**5 Interactive Scenarios:**
+
+**Scenario 1: Anti-Patterns** (15 min)
+- Demonstrate 5 ways secrets leak in Docker containers
+- Hardcoded secrets visible in `docker history`
+- Environment variables exposed in `docker inspect`
+- Build arguments persisting in image layers
+- Mounted files with wrong permissions (world-readable)
+- Git history leaks (permanent even after deletion)
+
+**Scenario 2: Docker Swarm Secrets** (20 min)
+- Create and manage secrets via Swarm CLI
+- Deploy services with secret mounts at `/run/secrets/`
+- Verify secrets NOT visible in `docker inspect` (metadata only)
+- Understand encrypted storage and tmpfs security properties
+- Compare with anti-patterns (ENV vars vs Swarm secrets)
+
+**Scenario 3: HashiCorp Vault Integration** (25 min)
+- Run Vault in dev mode (containerized, macOS compatible)
+- Store and retrieve secrets via CLI and HTTP API
+- Integrate applications with Vault at runtime
+- Understand centralized secret management
+- Compare Vault vs Swarm secrets (environment flexibility)
+
+**Scenario 4: BuildKit Secret Mounts** (15 min)
+- Pass secrets to builds without ARG leakage
+- Access private npm/pip registries during build
+- Use SSH keys for private git repos during build
+- Implement multi-stage builds with secret isolation
+- Verify secrets don't persist in final image or history
+
+**Scenario 5: Secret Scanning** (15 min)
+- Scan repositories for leaked secrets with GitLeaks
+- Detect secrets in git history (even after deletion)
+- Set up pre-commit hooks to prevent secret commits
+- Integrate secret scanning in CI/CD pipelines (GitHub Actions, Azure DevOps)
+- Create custom detection rules for company-specific secrets
+
+**Time:** 90 minutes (all scenarios) or 15-25 minutes each
+
+**Why This Matters:**
+- Secrets in git are permanent (even after deletion)
+- Environment variables leak through docker inspect and logs
+- BuildKit secrets enable secure builds without image pollution
+- Automated scanning prevents accidental commits
+- Multi-layered approach (Swarm + Vault + scanning) for production
+
+**Tier 2 (Linux VM - Lab 11 Planned):**
+- Process memory forensics to detect secrets in RAM
+- tmpfs verification (prove secrets are in-memory only)
+- Production Vault with TLS, audit logging, and dynamic secrets
+- Zero-downtime secret rotation with SIGHUP handling
+- Compliance audit reports (PCI-DSS, SOC 2)
+
+---
+
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -416,12 +535,17 @@ Lab 09: Runtime Escape
          (5 Scenarios: Socket to /proc)
 ```
 
+### Level 4: Production Security
+
+
 **Estimated Time:** 
 - Level 1 (Labs 01-06): 4-6 hours
 - Level 2 (Labs 07-08): 2-3 hours
 - Level 3 (Lab 09): 2-2.5 hours
-- Complete guide: 8-11.5 hours
-- With practice exercises: 12-17 hours
+- Level 4 (Lab 10): 90 minutes
+- Complete guide: 9.5-13 hours
+- With practice exercises: 14-19 hours
+```
 
 ## 🛠️ Tools & Technologies
 
@@ -645,8 +769,9 @@ Track your progress:
 - [ ] Lab 07: Supply Chain Security (SBOM) ⏱️ 45-60 min
 - [ ] Lab 08: Network Security (5 Scenarios) ⏱️ 18-22 min
 - [ ] Lab 09: Runtime Escape (5 Scenarios) ⏱️ 2-2.5 hrs
+- [ ] Lab 10: Secrets Management (5 Scenarios) ⏱️ 90 min
 
-**Total Time:** 8-11.5 hours
+**Total Time:** 9.5-13 hours
 
 ## 📜 License
 
@@ -692,10 +817,14 @@ If you find this guide helpful:
 
 ### Upcoming Labs (Planned)
 
-- **Lab 10**: Runtime Security with Falco
-- **Lab 11**: Kubernetes Security Fundamentals
+- **Lab 11**: Secrets Management - Tier 2 Deep-Dive (Linux VM Required)
+  - Process memory forensics and secret extraction
+  - Production Vault with TLS, HA, and dynamic secrets
+  - Zero-downtime secret rotation patterns
+  - Compliance audit logging (PCI-DSS, SOC 2)
 - **Lab 12**: Container Registry Security
-- **Lab 13**: Secrets Management with HashiCorp Vault
+- **Lab 13**: Advanced Kubernetes Security Patterns
+```
 
 ### Stay Updated
 

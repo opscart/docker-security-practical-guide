@@ -1,0 +1,25 @@
+title = "Custom Secret Detection Rules"
+ 
+[[rules]]
+id = "company-api-key"
+description = "Company Internal API Key"
+regex = '''(?i)company[_-]?api[_-]?key['":\s=]+([a-zA-Z0-9]{32})'''
+tags = ["key", "company"]
+ 
+[[rules]]
+id = "internal-token"
+description = "Internal Service Token"  
+regex = '''INT-[A-Z0-9]{16}'''
+tags = ["token", "internal"]
+ 
+[[rules]]
+id = "database-password"
+description = "Database Password in Connection String"
+regex = '''postgres://[^:]+:([^@]+)@'''
+tags = ["database", "password"]
+ 
+[[rules]]
+id = "private-key"
+description = "Private SSH/PGP Key"
+regex = '''-----BEGIN (RSA|OPENSSH|PGP) PRIVATE KEY-----'''
+tags = ["key", "private"]

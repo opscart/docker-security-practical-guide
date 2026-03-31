@@ -1,0 +1,4 @@
+{
+  "note": "This demonstrates ARG leakage",
+  "build_command": "docker build --build-arg SECRET_TOKEN=ghp_xxxx ."
+}

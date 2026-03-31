@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    image: python:3.9-slim
+    container_name: lab10-envvars
+    environment:
+      # ANTI-PATTERN: Secrets in environment variables
+      # Visible in: docker inspect, /proc/<pid>/environ, logs
+      - DATABASE_PASSWORD=ProductionPassword123
+      - API_KEY=sk-1234567890abcdef
+      - STRIPE_SECRET=rk_live_51234567890
+    command: |
+      sh -c "
+        echo 'App running with ENV var secrets (BAD!)';
+        echo 'DATABASE_PASSWORD=$$DATABASE_PASSWORD';
+        echo 'API_KEY=$$API_KEY';
+        sleep infinity
+      "

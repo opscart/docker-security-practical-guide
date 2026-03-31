@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault-dev
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: myroot
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: server -dev
+
+  app:
+    image: python:3.9-slim
+    container_name: vault-demo-app
+    depends_on:
+      - vault
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: myroot
+    volumes:
+      - ./app.py:/app/app.py:ro
+    command: |
+      sh -c "
+        pip install hvac requests >/dev/null 2>&1 &&
+        python /app/app.py
+      "

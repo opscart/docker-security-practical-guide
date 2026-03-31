@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    image: python:3.9-slim
+    container_name: lab10-volumes
+    volumes:
+      # ANTI-PATTERN: Mounting secret files with wrong permissions
+      # File is 0644 (world-readable) instead of 0600
+      - ./secrets:/run/secrets:ro
+    command: |
+      sh -c "
+        echo 'App running with MOUNTED secrets (permissions issue!)';
+        echo 'Secret content:';
+        cat /run/secrets/api_key.txt;
+        echo '';
+        echo 'File permissions:';
+        ls -la /run/secrets/api_key.txt;
+        sleep infinity
+      "

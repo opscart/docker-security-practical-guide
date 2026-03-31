@@ -1,0 +1,9 @@
+version: '3.8'
+ 
+services:
+  gitleaks:
+    image: zricethezav/gitleaks:latest
+    volumes:
+      - ./test-repo:/path
+    command: detect --source /path --verbose
+ 
