@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    image: python:3.9-slim
+    command: python /app/app.py
+    secrets:
+      - db_password
+      - api_key
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - ./examples/basic-secret/app.py:/app/app.py:ro
+
+secrets:
+  db_password:
+    external: true
+  api_key:
+    external: true

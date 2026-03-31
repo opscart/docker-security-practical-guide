@@ -1,0 +1,12 @@
+title = "GitLeaks Configuration"
+ 
+[extend]
+useDefault = true
+ 
+[allowlist]
+description = "Allowed patterns"
+regexes = [
+  '''placeholder.*''',
+  '''example\.com''',
+]
+ 

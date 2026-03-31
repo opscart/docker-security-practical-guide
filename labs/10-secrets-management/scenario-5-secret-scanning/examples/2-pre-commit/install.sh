@@ -1,0 +1,20 @@
+#!/bin/bash
+ 
+echo "Pre-Commit Hook Installation"
+echo ""
+echo "This script would install pre-commit hooks to prevent"
+echo "committing secrets to the repository."
+echo ""
+echo "Steps:"
+echo "1. Install pre-commit framework:"
+echo "   pip install pre-commit"
+echo ""
+echo "2. Install the hooks:"
+echo "   pre-commit install"
+echo ""
+echo "3. Test manually:"
+echo "   pre-commit run --all-files"
+echo ""
+echo "Once installed, GitLeaks will run on every commit"
+echo "and block the commit if secrets are detected."
+ 

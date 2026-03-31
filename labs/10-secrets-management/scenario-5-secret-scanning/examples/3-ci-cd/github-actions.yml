@@ -1,0 +1,24 @@
+name: Secret Scan
+ 
+on: [push, pull_request]
+ 
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+ 
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+ 
+      - name: Fail if secrets found
+        if: failure()
+        run: |
+          echo "Secrets detected! Fix before merging."
+          exit 1
+ 

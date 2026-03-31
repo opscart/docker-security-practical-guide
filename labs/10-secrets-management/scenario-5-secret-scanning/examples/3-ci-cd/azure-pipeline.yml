@@ -1,0 +1,24 @@
+trigger:
+  - main
+  - develop
+ 
+pool:
+  vmImage: 'ubuntu-latest'
+ 
+steps:
+- checkout: self
+  fetchDepth: 0
+ 
+- script: |
+    docker run -v $(Build.SourcesDirectory):/path \
+      zricethezav/gitleaks:latest detect \
+      --source /path \
+      --verbose \
+      --exit-code 1
+  displayName: 'Scan for Secrets with GitLeaks'
+ 
+- script: |
+    echo "Pipeline failed: Secrets detected!"
+    echo "Review GitLeaks output and remove secrets."
+  condition: failed()
+  displayName: 'Secret Detection Failed'

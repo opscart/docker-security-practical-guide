@@ -1,0 +1,21 @@
+#!/bin/bash
+# Tier 2: Production Vault demonstration
+ 
+echo "Scenario 3 Advanced Demo (Tier 2 - Linux VM Required)"
+echo ""
+echo "This demo requires a Linux VM for:"
+echo "  1. Production Vault with TLS"
+echo "  2. Dynamic database secrets"
+echo "  3. AppRole authentication"
+echo "  4. Audit log analysis"
+echo ""
+echo "See TIER2-VM-SETUP.md for VM setup instructions."
+echo ""
+echo "Advanced features to be demonstrated:"
+echo "  - Vault initialization and unsealing"
+echo "  - TLS certificate configuration"
+echo "  - Dynamic PostgreSQL credentials"
+echo "  - Lease renewal and revocation"
+echo "  - Comprehensive audit logging"
+echo ""
+echo "To be implemented after Tier 1 validation."

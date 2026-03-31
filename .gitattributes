@@ -1,0 +1,3 @@
+# Exclude demo files from secret scanning
+labs/10-secrets-management/scenario-5-secret-scanning/demo.sh linguist-generated=true
+labs/10-secrets-management/scenario-5-secret-scanning/examples/** linguist-generated=true
