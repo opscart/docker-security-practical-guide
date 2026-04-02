@@ -183,7 +183,7 @@ print_info "Building a sample Node.js application..."
 # Check if Dockerfile exists, if not create a simple one
 if [ ! -f "Dockerfile.sample" ]; then
     cat > Dockerfile.sample << 'EOF'
-FROM node:18-alpine
+FROM node:18.20.5-alpine3.20
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

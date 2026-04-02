@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.9.20-slim
 
 # ANTI-PATTERN: Secret passed as build argument
 # Visible in docker history and build cache

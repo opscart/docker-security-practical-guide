@@ -15,7 +15,7 @@ fi
 
 # Build sample image
 cat > Dockerfile << 'DF'
-FROM alpine:latest
+FROM alpine:3.20.3
 CMD ["echo", "Signed Image"]
 DF
 

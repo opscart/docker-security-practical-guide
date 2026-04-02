@@ -57,7 +57,7 @@ PYTHON
 
 # Create Dockerfile
 cat > Dockerfile.ml << 'DOCKERFILE'
-FROM python:3.11-slim
+FROM python:3.11.9-slim
 
 WORKDIR /app
 

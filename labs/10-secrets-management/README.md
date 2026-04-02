@@ -241,29 +241,43 @@ Production environments layer these approaches:
 ---
 
 ### [Scenario 4: BuildKit Secret Mounts](./scenario-4-buildkit-secrets/)
-
+ 
 **Solution:** Pass secrets to builds without embedding them in image layers.
-
+ 
 **Use Cases:**
 1. Private npm/pip registry access during `npm install`
 2. SSH keys for cloning private git repos
 3. API tokens for downloading artifacts
 4. Multi-stage builds where secrets only needed in build stage
-
+ 
 **Security Properties:**
 - Secrets available only during specific RUN instruction
 - Never written to image layers
 - Not visible in `docker history`
 - Automatically removed after build completes
-
+ 
 **Example:**
 ```dockerfile
-RUN --mount=type=secret,id=npm_token \
-    NPM_TOKEN=$(cat /run/secrets/npm_token) && \
-    npm install
-# Token gone after this layer completes
+FROM node:18.20.5-alpine3.20
+WORKDIR /app
+COPY package.json* ./
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+  npm ci --only=production && \
+  npm cache clean --force
+COPY app.js ./
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+USER nodejs
+CMD ["node", "app.js"]
 ```
-
+**Build:**
+```bash
+docker build --secret id=npmrc,src=$HOME/.npmrc -t app .
+```
+ 
+**Key Insight:** BuildKit secrets are ephemeral by design. They exist only during the RUN instruction, then disappear - can't leak because they never persist.
+ 
 ---
 
 ### [Scenario 5: Secret Scanning](./scenario-5-secret-scanning/)

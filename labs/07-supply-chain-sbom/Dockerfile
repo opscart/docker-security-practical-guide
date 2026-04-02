@@ -1,7 +1,7 @@
 # Sample Dockerfile for Lab 07 SBOM demonstrations
 # This is a simple Node.js application used to demonstrate SBOM generation
 
-FROM node:18-alpine AS base
+FROM node:18.20.5-alpine3.20 AS base
 
 # Add metadata labels
 LABEL org.opencontainers.image.title="Sample App for SBOM Demo"
