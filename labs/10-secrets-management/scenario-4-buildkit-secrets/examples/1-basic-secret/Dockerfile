@@ -1,5 +1,5 @@
 # File: examples/1-basic-secret/Dockerfile
-FROM alpine:latest
+FROM alpine:3.20.3
  
 # Using BuildKit secret mount
 RUN --mount=type=secret,id=api_token \

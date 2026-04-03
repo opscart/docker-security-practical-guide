@@ -103,7 +103,8 @@ echo "secret-value" | docker build --secret id=mysecret .
 
 **Dockerfile:**
 ```dockerfile
-FROM alpine:latest
+FROM alpine:3.20.3
+
 RUN --mount=type=secret,id=api_token \
   API_TOKEN=$(cat /run/secrets/api_token) && \
   echo "Using token: ${API_TOKEN:0:8}***" && \
@@ -127,20 +128,22 @@ docker run app:latest cat /run/secrets/api_token  # File does NOT exist
 
 **Dockerfile:**
 ```dockerfile
-FROM node:18-alpine
+FROM node:18.20.5-alpine3.20
 WORKDIR /app
-
-# Copy package.json
-COPY package.json .
-
-# Install from private registry using secret
+COPY package.json* ./
 RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
-  npm install
+  npm install --only=production && \
+  npm cache clean --force
 
-# Copy app code
-COPY . .
+COPY app.js ./
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+USER nodejs
 CMD ["node", "app.js"]
 ```
+
+**Note:** This example uses `npm install` for simplicity. For production applications with `package-lock.json`, use `npm ci` for deterministic builds.
 
 **Build:**
 ```bash
@@ -153,7 +156,7 @@ docker build --secret id=npmrc,src=.npmrc -t myapp:latest .
 
 **Dockerfile:**
 ```dockerfile
-FROM alpine:latest
+FROM alpine:3.20.3
 RUN apk add --no-cache git openssh-client
 
 # Clone private repo using SSH key
@@ -177,7 +180,7 @@ docker build --ssh default --secret id=known_hosts,src=~/.ssh/known_hosts .
 **Dockerfile:**
 ```dockerfile
 # Build stage - uses secrets
-FROM node:18-alpine AS builder
+FROM node:18.20.5-alpine3.20 AS builder
 WORKDIR /app
 
 COPY package.json .
@@ -188,7 +191,7 @@ COPY . .
 RUN npm run build
 
 # Final stage - no secrets
-FROM nginx:alpine
+FROM nginx:1.27.2-alpine3.20
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Verify: No .npmrc in final image

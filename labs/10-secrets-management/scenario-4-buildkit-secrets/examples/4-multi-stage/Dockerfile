@@ -1,6 +1,6 @@
 # File: examples/4-multi-stage/Dockerfile
 # Build stage - uses secrets
-FROM alpine:latest AS builder
+FROM alpine:3.20.3 AS builder
  
 RUN apk add --no-cache curl
  
@@ -11,7 +11,7 @@ RUN --mount=type=secret,id=build_secret \
   echo "Downloaded artifact securely" > /artifact.txt
  
 # Final stage - NO secrets
-FROM alpine:latest
+FROM alpine:3.20.3
  
 # Copy artifact from builder (not the secret!)
 COPY --from=builder /artifact.txt /app/artifact.txt

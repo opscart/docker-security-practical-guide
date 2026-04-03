@@ -186,7 +186,7 @@ flask==3.0.0
 REQEOF
 
 cat > /tmp/lab08-app/Dockerfile << 'DOCKERFILE'
-FROM python:3.11-alpine
+FROM python:3.11.9-alpine3.20
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
