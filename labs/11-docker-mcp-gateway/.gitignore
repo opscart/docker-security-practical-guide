@@ -1,0 +1,3 @@
+security-pipeline/auth/secrets/*.txt
+!security-pipeline/auth/secrets/.gitkeep
+!security-pipeline/auth/secrets/.gitkeep
