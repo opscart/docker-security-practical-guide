@@ -407,12 +407,103 @@ Advanced production security patterns for secret management.
 - Automated scanning prevents accidental commits
 - Multi-layered approach (Swarm + Vault + scanning) for production
 
-**Tier 2 (Linux VM - Lab 11 Planned):**
-- Process memory forensics to detect secrets in RAM
-- tmpfs verification (prove secrets are in-memory only)
-- Production Vault with TLS, audit logging, and dynamic secrets
-- Zero-downtime secret rotation with SIGHUP handling
-- Compliance audit reports (PCI-DSS, SOC 2)
+### [Lab 11: Docker MCP Gateway for AI-Powered Container Remediation](./labs/11-docker-mcp-gateway/)
+
+**What You'll Learn:**
+- Build an AI-powered Docker container management system using Model Context Protocol (MCP)
+- Integrate AutoGen multi-agent framework with GPT-4 for decision-making
+- Implement automated container failure detection and remediation
+- Create production-grade security pipelines (HMAC auth, rate limiting, audit logging)
+- Design intelligent escalation policies (auto-fix vs human intervention)
+
+**Key Concepts:**
+- Model Context Protocol (MCP) - standardized tool interface for AI agents
+- AutoGen framework - multi-agent conversation and tool execution
+- Docker API integration - logs, restart, resource updates
+- AI decision-making - context-aware remediation vs escalation
+- Security pipeline - authentication, rate limiting, input validation, audit trail
+- Production patterns - read-only filesystems, non-root users, health checks
+
+**4 Interactive Scenarios:**
+
+**Scenario 1: OOMKilled Auto-Remediation** (5 min)
+- Container killed due to out-of-memory
+- Agent detects OOMKilled (exit code 137)
+- Agent increases memory limit by 50-100%
+- Validates: Smart resource scaling based on failure analysis
+
+**Scenario 2: CrashLoopBackOff Escalation** (5 min)
+- Container crashes immediately on startup (config/code bug)
+- Agent recognizes: Restart won't fix it
+- Agent escalates to human with log details
+- Validates: Conservative decision-making for complex issues
+
+**Scenario 3: Exit Code Analysis** (5 min)
+- Container exits with error (database connection failed)
+- Agent attempts restart (reasonable for network errors)
+- Container still exits → Agent escalates
+- Validates: Smart retry logic with escalation fallback
+
+**Scenario 4: Health Check Failure** (5 min)
+- Container running but failing health checks (app deadlock)
+- Agent restarts unhealthy container
+- Validates: Auto-recovery for stuck/deadlocked applications
+
+**Architecture:**
+```
+Docker Failure → AutoGen Agent (GPT-4) → MCP Server (Security Pipeline) → Docker API
+                                              ↓
+                                     HMAC Auth → Rate Limit → Validate → Audit
+```
+
+**Technologies:**
+- **AutoGen** (pyautogen 0.1.14) - Multi-agent framework
+- **OpenAI GPT-4** - Decision-making and reasoning
+- **Model Context Protocol (MCP)** - Standardized tool interface
+- **Docker API** - Container management (logs, restart, update)
+- **Redis** - Rate limiting (100 req/hour per agent)
+- **Flask** - MCP server implementation
+
+**Security Features:**
+- HMAC signature authentication
+- Redis-backed rate limiting
+- Input validation (injection protection)
+- Complete audit trail (JSON logging)
+- Multi-stage Docker builds
+- Non-root execution (UID 1000)
+- Read-only filesystems with tmpfs
+- Capability dropping
+- Resource limits
+
+**Time:** 60-90 minutes (setup + 4 scenarios)
+
+**Why This Matters:**
+- Reduces on-call burden by automating common container failures
+- Demonstrates AI-powered infrastructure automation
+- Implements production-grade security patterns
+- Shows when to auto-remediate vs escalate to humans
+- First Docker MCP Gateway implementation in open source
+
+**Prerequisites:**
+- Docker Desktop or Docker Engine
+- OpenAI API key (GPT-4 access)
+- 8GB RAM minimum
+- Understanding of Docker API basics
+
+**What You'll Build:**
+- MCP server with 3 Docker tools (logs, restart, resource update)
+- AutoGen AI agent with context-aware decision-making
+- Security pipeline with authentication and rate limiting
+- Complete audit trail system
+- 4 production-ready test scenarios
+
+---
+
+- **Lab 12**: Secrets Management - Tier 2 Deep-Dive (Linux VM Required)
+  - Process memory forensics and secret extraction
+  - Production Vault with TLS, HA, and dynamic secrets
+  - Zero-downtime secret rotation patterns
+  - Compliance audit logging (PCI-DSS, SOC 2)
 
 ---
 
@@ -542,10 +633,10 @@ Lab 09: Runtime Escape
 - Level 1 (Labs 01-06): 4-6 hours
 - Level 2 (Labs 07-08): 2-3 hours
 - Level 3 (Lab 09): 2-2.5 hours
-- Level 4 (Lab 10): 90 minutes
-- Complete guide: 9.5-13 hours
-- With practice exercises: 14-19 hours
-```
+- Level 4 (Lab 10): 2-2.5 minutes
+- Complete guide: 11.5-13 hours
+- With practice exercises: 15-19 hours
+
 
 ## 🛠️ Tools & Technologies
 
@@ -770,8 +861,9 @@ Track your progress:
 - [ ] Lab 08: Network Security (5 Scenarios) ⏱️ 18-22 min
 - [ ] Lab 09: Runtime Escape (5 Scenarios) ⏱️ 2-2.5 hrs
 - [ ] Lab 10: Secrets Management (5 Scenarios) ⏱️ 90 min
+- [ ] Lab 11: Docker MCP Gateway (AI-Powered Remediation) ⏱️ 60-90 min
 
-**Total Time:** 9.5-13 hours
+**Total Time:** 11.5-14 hours
 
 ## 📜 License
 
@@ -817,14 +909,12 @@ If you find this guide helpful:
 
 ### Upcoming Labs (Planned)
 
-- **Lab 11**: Secrets Management - Tier 2 Deep-Dive (Linux VM Required)
+- **Lab 12**: Secrets Management - Tier 2 Deep-Dive (Linux VM Required)
   - Process memory forensics and secret extraction
   - Production Vault with TLS, HA, and dynamic secrets
   - Zero-downtime secret rotation patterns
   - Compliance audit logging (PCI-DSS, SOC 2)
-- **Lab 12**: Container Registry Security
-- **Lab 13**: Advanced Kubernetes Security Patterns
-```
+
 
 ### Stay Updated
 

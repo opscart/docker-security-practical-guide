@@ -1,0 +1,171 @@
+# docker-compose.yml
+# Production Docker orchestration for Docker MCP Gateway
+
+services:
+  # =========================================================================
+  # REDIS - Rate limiting layer
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-redis
+    networks:
+      - mcp-internal
+    
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    
+    restart: unless-stopped
+  
+  # =========================================================================
+  # MCP SERVER - Tool execution layer (Docker API)
+  # =========================================================================
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: mcp-server
+    networks:
+      - mcp-internal
+    ports:
+      - "3000:3000"
+    group_add:
+      - "${DOCKER_GID:-0}"  # Add Docker group
+# =========================================================================
+# ⚠️ SECURITY NOTE: Running as root for local testing only
+# In production, use proper GID mapping or rootless Docker
+# =========================================================================
+    user: root
+
+    # Docker Secrets
+    secrets:
+      - mcp_api_key
+    
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    
+    # Writable directories via tmpfs
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/log/mcp:noexec,nosuid,size=500m
+      - /app/.cache:size=100m,uid=0,gid=0 
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:3000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    
+    # Mount Docker socket for container management
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Docker API access
+      - ./monitoring/audit-logs:/var/log/mcp/audit
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    restart: unless-stopped
+  
+  # =========================================================================
+  # AGENT - Decision-making layer (AutoGen + GPT-4)
+  # =========================================================================
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: remediation-agent
+    networks:
+      - mcp-internal
+    
+    environment:
+      - MCP_SERVER_URL=http://mcp-server:3000
+      - AGENT_ID=docker-ops-agent-001
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    
+    # Docker Secrets
+    secrets:
+      - agent_key
+    
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    
+    # Writable directories
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/log/agent:noexec,nosuid,size=500m
+      - /app/.cache:size=100m  # AutoGen cache
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/agent_ready || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    
+    volumes:
+      - ./monitoring/audit-logs:/var/log/agent/audit
+    
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    
+    restart: unless-stopped
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  mcp-internal:
+    driver: bridge
+
+# ============================================================================
+# SECRETS
+# ============================================================================
+secrets:
+  mcp_api_key:
+    file: ./security-pipeline/auth/secrets/mcp_api_key.txt
+  
+  agent_key:
+    file: ./security-pipeline/auth/secrets/agent_key.txt
