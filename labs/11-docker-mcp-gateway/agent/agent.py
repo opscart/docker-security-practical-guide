@@ -174,7 +174,7 @@ def execute_tool_calls(message_content):
 
 # LLM configuration
 config_list = [{
-    "model": "gpt-4",
+    "model": "gpt-3.5-turbo",
     "api_key": OPENAI_API_KEY,
 }]
 
