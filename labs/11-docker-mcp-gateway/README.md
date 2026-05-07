@@ -1,6 +1,6 @@
 # Lab 11: Docker MCP Gateway for AI-Powered Container Remediation
 
-**An intelligent Docker container management system using the Model Context Protocol (MCP), AutoGen, and GPT-4 for automated failure detection and remediation.**
+**An intelligent Docker container management system using the Model Context Protocol (MCP), AutoGen, and GPT-3.5-turbo for automated failure detection and remediation.**
 
 ---
 
@@ -10,7 +10,7 @@ This lab demonstrates a production-grade **Docker MCP Gateway** - an AI-powered 
 
 - **Model Context Protocol (MCP)** - Standardized tool interface for AI agents
 - **AutoGen** - Multi-agent conversation framework
-- **GPT-4** - Decision-making and reasoning
+- **GPT-3.5-turbo** - Decision-making and reasoning
 - **Docker API** - Container management and monitoring
 
 **Real-world use case:** Reduce on-call burden by automatically handling common container failures (OOMKilled, health check failures, transient crashes) while escalating complex issues to humans.
@@ -26,7 +26,7 @@ This lab demonstrates a production-grade **Docker MCP Gateway** - an AI-powered 
                         │
                         ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  AutoGen AI Agent (GPT-4)                                   │
+│  AutoGen AI Agent (GPT-3.5-turbo)                                   │
 │  - Receives alert                                            │
 │  - Analyzes container state                                  │
 │  - Makes remediation decision                                │
@@ -82,7 +82,7 @@ This lab demonstrates a production-grade **Docker MCP Gateway** - an AI-powered 
 
 - **Docker Desktop** (or Docker Engine)
 - **Docker Compose** v2.0+
-- **OpenAI API Key** (GPT-4 access)
+- **OpenAI API Key** (GPT-3.5-turbo access)
 - **macOS/Linux** (tested on macOS)
 - **8GB RAM minimum** (for running services + test containers)
 
@@ -235,7 +235,7 @@ cd scenarios
 3. Agent recognizes: App stuck/deadlocked/unresponsive
 4. Agent restarts container to recover
 
-**Result:** ✅ **Fix Applied** - Needs final validation with GPT-4
+**Result:** ✅ **Fix Applied** - Needs final validation with GPT-3.5-turbo
 
 ```bash
 ./scenario-4-healthcheck.sh
@@ -248,6 +248,48 @@ cd scenarios
 ```
 
 **Key Learning:** Health check failures often indicate app-level issues (deadlock, memory leak) that restart can fix.
+
+---
+
+
+---
+
+## 📊 **Validation Results**
+
+The agent was validated across all four scenarios in two phases:
+**before-fixes** (development data) and **after-fixes** (post-fix
+validation runs). Full per-incident audit logs, CSV results, and
+the analyzer script are committed under `monitoring/analysis/`.
+
+### Headline metrics
+
+| Phase | Runs | Correct | Avg turns/incident |
+|-------|------|---------|--------------------|
+| Before fixes | 7 | 3/7 (**43%**) | 22.7 |
+| After fixes | 6 | 6/6 (**100%**) | 11.7 |
+
+The 43% → 100% improvement reflects the engineering iteration captured
+in the [Troubleshooting](#-troubleshooting) section above. Specifically:
+
+- **Challenge 3** (memory-swap blocking memory updates) → fixed; OOMKilled
+  scenario went from 0/2 to 2/2 correct
+- **Challenge 6** (agent over-eager on CrashLoopBackOff) → fixed; agent
+  now consistently escalates rather than auto-restarting
+- **Challenge 9** (conversation looping) → fixed; turn count roughly
+  halved across all scenarios
+
+### Reproducing the analysis
+
+```bash
+cd monitoring/analysis
+python3 analyze_audit.py before-fixes/
+python3 analyze_audit.py after-fixes/
+```
+
+See [`monitoring/analysis/README.md`](./monitoring/analysis/README.md) for
+methodology, dataset descriptions, and known limitations.
+
+
 
 ---
 
@@ -613,7 +655,7 @@ All agent decisions are logged to `/var/log/agent/audit/` in JSON format:
 - **Model Context Protocol (MCP):** https://modelcontextprotocol.io/
 - **AutoGen Documentation:** https://microsoft.github.io/autogen/
 - **Docker API:** https://docs.docker.com/engine/api/
-- **OpenAI GPT-4:** https://platform.openai.com/docs/models/gpt-4
+- **OpenAI GPT-3.5-turbo:** https://platform.openai.com/docs/models/gpt-4
 
 ---
 

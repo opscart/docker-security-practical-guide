@@ -1,0 +1,7 @@
+file,incident_id,timestamp,scenario,outcome,expected,correct,confidence,turns,duration_s,tools,issues,resolved_flag
+inc-20260507-020815.json,inc-20260507-020815,2026-05-07T02:08:15.392124Z,OOMKilled,AutoResolved,AutoResolved,Yes,HIGH,12,0.0,check_container_logs; restart_container,3 empty turns,True
+inc-20260507-020918.json,inc-20260507-020918,2026-05-07T02:09:18.145871Z,OOMKilled,AutoResolved,AutoResolved,Yes,HIGH,12,0.0,check_container_logs; restart_container,3 empty turns,True
+inc-20260507-021014.json,inc-20260507-021014,2026-05-07T02:10:14.978099Z,CrashLoopBackOff,Escalated,Escalated,Yes,HIGH,10,0.0,check_container_logs,3 empty turns,False
+inc-20260507-021105.json,inc-20260507-021105,2026-05-07T02:11:05.956617Z,ExitCodeAnalysis,AutoResolved+Escalated,AutoResolved+Escalated,Yes,HIGH,12,0.0,check_container_logs; restart_container,3 empty turns,True
+inc-20260507-021215.json,inc-20260507-021215,2026-05-07T02:12:15.517749Z,HealthCheckFailure,AutoResolved,AutoResolved,Yes,HIGH,12,0.0,check_container_logs; restart_container,3 empty turns,True
+inc-20260507-021329.json,inc-20260507-021329,2026-05-07T02:13:29.559081Z,HealthCheckFailure,AutoResolved,AutoResolved,Yes,HIGH,12,0.0,check_container_logs; restart_container,3 empty turns,True
