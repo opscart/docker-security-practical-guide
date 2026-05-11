@@ -1,0 +1,4 @@
+<!-- TODO: replace with the locked control-loop diagram.
+     Required arrows: CI/CD -> Registry -> Admission -> Runtime+Audit -> CI/CD (feedback).
+     Each arrow labeled with the data flowing on it (SBOM, signature, attestation, policy event, drift signal). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"><text x="20" y="100">Control loop diagram — TODO</text></svg>

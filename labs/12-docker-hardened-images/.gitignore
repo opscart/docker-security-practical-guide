@@ -1,0 +1,19 @@
+# Local state
+*.log
+*.tmp
+kubeconfig
+.env
+
+# Tool outputs
+experiments/*/output/*.json
+experiments/*/output/*.csv
+!experiments/*/output/sample-*.json
+
+# Cosign keys (use keyless or workload identity)
+*.key
+*.pub
+
+# Terraform
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.backup

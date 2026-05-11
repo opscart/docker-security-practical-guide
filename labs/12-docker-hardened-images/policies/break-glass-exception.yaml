@@ -1,0 +1,69 @@
+# break-glass-exception.yaml
+#
+# Break-glass exception path: under controlled, audited conditions, the
+# trust policies above can be bypassed. This is THE realistic production
+# pattern — strict-by-default with an explicit override mechanism.
+#
+# Why this matters:
+#   Without a break-glass path, the first time a critical patch breaks
+#   policy verification (e.g. signing infrastructure outage, key rotation
+#   mid-flight), teams disable enforcement entirely. That defeats the
+#   point. A documented, audited, time-bound exception path keeps the
+#   default strict while accommodating reality.
+#
+# Design notes:
+#   - Uses Kyverno PolicyException (not just rule exclusion) — this is the
+#     audit-friendly mechanism. PolicyException resources are themselves
+#     RBAC-gated and visible to the audit trail.
+#   - Requires a specific approval label on the namespace:
+#       trust.governance.io/break-glass-approved: "<change-ticket-id>"
+#   - The exception only applies to pods in that namespace, NOT cluster-wide.
+#   - The exception has an explicit expiry annotation. Kyverno doesn't
+#     auto-expire PolicyExceptions, so this is enforced by tooling that
+#     scans for expired annotations daily. See tools/compliance-mapper.sh.
+#   - In real production, the namespace label and ticket ID would be set by
+#     an admission webhook tied to your change management system (Jira, etc).
+#
+# How to invoke break-glass:
+#   1. Operator creates change ticket: CHG-12345
+#   2. Operator labels target namespace:
+#        kubectl label ns my-app trust.governance.io/break-glass-approved=CHG-12345
+#   3. Operator creates a PolicyException matching THIS pattern (see below).
+#      The exception names CHG-12345 and an explicit expiry timestamp.
+#   4. Operator deploys non-compliant workload to my-app. It is admitted.
+#   5. Compliance tooling logs the exception and alerts on the expiry.
+#
+# Sample PolicyException — operators copy this template per incident.
+# This is NOT a wildcard exception; it shows the pattern. Lab demo uses it.
+
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: break-glass-chg-12345
+  namespace: kyverno
+  annotations:
+    trust.governance.io/change-ticket: "CHG-12345"
+    trust.governance.io/requested-by: "platform-engineering@example.com"
+    trust.governance.io/expires-at: "2026-05-17T00:00:00Z"
+    trust.governance.io/justification: >-
+      Lab demonstration of break-glass exception pattern. In production,
+      this annotation block records the auditable justification trail.
+spec:
+  exceptions:
+    - policyName: require-trusted-registry
+      ruleNames:
+        - trusted-registries-only
+    - policyName: require-signature
+      ruleNames:
+        - verify-cosign-signature
+    - policyName: require-sbom-attestation
+      ruleNames:
+        - verify-sbom-attestation
+  match:
+    any:
+      - resources:
+          kinds:
+            - Pod
+          namespaceSelector:
+            matchLabels:
+              trust.governance.io/break-glass-approved: "CHG-12345"

@@ -1,0 +1,281 @@
+# supply-chain-gate.yml
+#
+# E4 — Supply chain layer of the control loop. Builds an application image
+# on top of dhi.io/python:3.13, signs it with cosign keyless (Sigstore OIDC),
+# generates and signs a CycloneDX SBOM as an in-toto attestation, then
+# verifies all artifacts as a build-time gate. Pipeline fails closed if any
+# step's verification doesn't pass.
+#
+# Why keyless cosign:
+#   - No private keys to manage, rotate, or leak.
+#   - GitHub Actions mints a short-lived OIDC token, exchanged at Sigstore
+#     Fulcio for an ephemeral certificate. Cosign signs with the ephemeral
+#     key. The certificate records WHICH workflow signed it.
+#   - Verification policies match on workflow identity, not key fingerprint —
+#     making the trust contract auditable and human-readable.
+#
+# This file lives at .github/workflows/supply-chain-gate.yml in the repo
+# root (NOT in labs/12-.../experiments/E4/). GitHub Actions requires
+# workflow files at that path. A symlink in the experiments directory
+# points back to here.
+#
+# Verification policy (Kyverno, for use in E3 in production):
+#   The trusted signer for this image is:
+#     subjectRegExp: ^https://github\.com/opscart/docker-security-practical-guide/\.github/workflows/supply-chain-gate\.yml@refs/heads/.+$
+#     issuer:        https://token.actions.githubusercontent.com
+
+name: Supply Chain Gate
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      # Trigger only when E4 sample app or workflow itself changes
+      - 'labs/12-docker-hardened-images/experiments/E4-supply-chain-gates/examples/sample-app/**'
+      - '.github/workflows/supply-chain-gate.yml'
+  workflow_dispatch:   # Allow manual trigger for E4 demo runs
+
+# Concurrent runs on the same ref serialize. Prevents two pipelines racing
+# to sign the same image tag.
+concurrency:
+  group: supply-chain-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: opscart/docker-security-practical-guide/dhi-sample-app
+
+  # Pinned tool versions. Pin everything — supply chain tooling itself
+  # should follow the same provenance principles we're enforcing.
+  COSIGN_VERSION: v2.4.1
+  SYFT_VERSION:   v1.18.1
+  GRYPE_VERSION:  v0.84.0
+
+jobs:
+  build-sign-attest-verify:
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read       # Read the repo (for actions/checkout)
+      packages: write      # Push to ghcr.io
+      id-token: write      # CRITICAL: enables keyless OIDC signing.
+                           # Without this, cosign falls back to key-based
+                           # and the entire keyless flow breaks.
+
+    steps:
+      # ----- Setup -----
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image refs
+        id: refs
+        run: |
+          # SHA-pinned and tag-pinned references. Cosign signs by digest, so
+          # the digest IS the canonical reference for verification.
+          IMAGE_REF="${REGISTRY}/${IMAGE_NAME}"
+          SHA_TAG="sha-${GITHUB_SHA::12}"
+          {
+            echo "image_ref=${IMAGE_REF}"
+            echo "sha_tag=${SHA_TAG}"
+            echo "full_ref=${IMAGE_REF}:${SHA_TAG}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.7.0
+        with:
+          cosign-release: ${{ env.COSIGN_VERSION }}
+
+      - name: Install syft + grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sh -s -- -b /usr/local/bin "${SYFT_VERSION}"
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
+            | sh -s -- -b /usr/local/bin "${GRYPE_VERSION}"
+          syft  version
+          grype version
+
+      # ----- Authenticate -----
+
+      # Login to GHCR using the workflow token. No PAT needed for pushes
+      # to the same repository's package namespace.
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Authenticate to dhi.io for the FROM line in the Dockerfile.
+      # DHI requires authenticated pulls even on the free tier.
+      - name: Login to dhi.io
+        uses: docker/login-action@v3
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ----- STAGE 1: Build -----
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: labs/12-docker-hardened-images/experiments/E4-supply-chain-gates/examples/sample-app
+          push: true
+          tags: |
+            ${{ steps.refs.outputs.full_ref }}
+            ${{ steps.refs.outputs.image_ref }}:latest
+          # provenance:false avoids Docker's own provenance attestation,
+          # which would conflict with our cosign-signed in-toto attestations.
+          # Our supply chain story is: cosign + in-toto, single source of truth.
+          provenance: false
+          sbom: false
+
+      # ----- STAGE 2: Sign (keyless) -----
+
+      - name: Sign image (keyless)
+        env:
+          # COSIGN_EXPERIMENTAL=1 is legacy — cosign 2.x has keyless on by default
+          # when --identity-token is omitted and an OIDC provider is detected.
+          # We're explicit about the identity to make the audit trail clear.
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          echo "Signing: ${IMAGE_BY_DIGEST}"
+          # --yes auto-confirms the keyless prompt (CI has no interactive shell).
+          cosign sign --yes "${IMAGE_BY_DIGEST}"
+
+      # ----- STAGE 3: SBOM generation + attestation -----
+
+      - name: Generate CycloneDX SBOM
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          # Scan the BUILT image, not the source. The SBOM represents the
+          # runtime artifact, which is what downstream consumers verify.
+          syft "${IMAGE_BY_DIGEST}" \
+            -o cyclonedx-json=sbom.cyclonedx.json
+          echo "SBOM packages: $(jq '.components | length' sbom.cyclonedx.json)"
+
+      - name: Sign SBOM as in-toto attestation
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          # The --type flag tells consumers what predicate schema the SBOM uses.
+          # Kyverno's verifyImages policy filters on this exact URI.
+          cosign attest --yes \
+            --type "https://cyclonedx.org/bom/v1.6" \
+            --predicate sbom.cyclonedx.json \
+            "${IMAGE_BY_DIGEST}"
+
+      # ----- STAGE 4: Vulnerability scan + attestation -----
+
+      - name: Scan with grype
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          # Fail the pipeline only on CRITICAL findings. HIGH and below
+          # are observed but allowed — typical Phase 1 enforcement posture.
+          # In a mature pipeline this threshold drops over time.
+          grype "${IMAGE_BY_DIGEST}" \
+            --fail-on critical \
+            -o json > grype-report.json || GRYPE_EXIT=$?
+          echo "Findings: $(jq '.matches | length' grype-report.json) total"
+          # Threshold check (informational; --fail-on already enforces critical)
+          jq '{
+            critical: [.matches[] | select(.vulnerability.severity=="Critical")] | length,
+            high:     [.matches[] | select(.vulnerability.severity=="High")]     | length,
+            medium:   [.matches[] | select(.vulnerability.severity=="Medium")]   | length
+          }' grype-report.json
+          exit "${GRYPE_EXIT:-0}"
+
+      - name: Attest vulnerability scan results
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          cosign attest --yes \
+            --type "https://cosign.sigstore.dev/attestation/vuln/v1" \
+            --predicate grype-report.json \
+            "${IMAGE_BY_DIGEST}"
+
+      # ----- STAGE 5: Verify (the GATE) -----
+      #
+      # If signing/attesting was tampered with, or if an attacker pushed an
+      # unsigned image to ghcr.io between our push and this step, these
+      # verifications fail and the pipeline reports failure. This is the
+      # supply-chain control gate — last chance to catch a problem before
+      # downstream consumers (or the article's screenshot) sees the artifact.
+
+      - name: Verify image signature
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          # Verify the signer was THIS workflow on THIS repo. Anyone running
+          # this exact verification command can reproduce our trust assertion.
+          cosign verify \
+            --certificate-identity-regexp "^https://github\\.com/opscart/docker-security-practical-guide/\\.github/workflows/supply-chain-gate\\.yml@.+$" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE_BY_DIGEST}"
+
+      - name: Verify SBOM attestation
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          cosign verify-attestation \
+            --type "https://cyclonedx.org/bom/v1.6" \
+            --certificate-identity-regexp "^https://github\\.com/opscart/docker-security-practical-guide/\\.github/workflows/supply-chain-gate\\.yml@.+$" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE_BY_DIGEST}" > /dev/null
+          echo "SBOM attestation verified."
+
+      - name: Verify vulnerability attestation
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          IMAGE_BY_DIGEST="${{ steps.refs.outputs.image_ref }}@${IMAGE_DIGEST}"
+          cosign verify-attestation \
+            --type "https://cosign.sigstore.dev/attestation/vuln/v1" \
+            --certificate-identity-regexp "^https://github\\.com/opscart/docker-security-practical-guide/\\.github/workflows/supply-chain-gate\\.yml@.+$" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE_BY_DIGEST}" > /dev/null
+          echo "Vulnerability attestation verified."
+
+      # ----- Reporting -----
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-artifacts-${{ steps.refs.outputs.sha_tag }}
+          path: |
+            sbom.cyclonedx.json
+            grype-report.json
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "## Supply Chain Gate Summary"
+            echo ""
+            echo "| Stage | Status |"
+            echo "|-------|--------|"
+            echo "| Image | \`${{ steps.refs.outputs.full_ref }}\` |"
+            echo "| Digest | \`${IMAGE_DIGEST}\` |"
+            echo "| Signature | Keyless via GitHub OIDC |"
+            echo "| SBOM | CycloneDX, attested |"
+            echo "| Vuln scan | grype, attested |"
+            echo "| Gate result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

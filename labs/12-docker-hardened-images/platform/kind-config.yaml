@@ -1,0 +1,39 @@
+# kind-config.yaml — kind cluster with modern containerd 2.x registry config.
+#
+# Containerd 2.x (shipped with K8s 1.31+) REMOVED the legacy [mirrors] block.
+# The modern pattern is:
+#   1. Tell containerd to read per-host config from a directory (config_path)
+#   2. After cluster creation, write hosts.toml files into that directory
+#      (done by bootstrap.sh, not here — kind-config can only set the base
+#      containerd config at cluster creation time)
+#
+# Why this is actually better than the old approach:
+#   - Mirror rules can be added/updated WITHOUT rebuilding the cluster
+#   - Each registry gets its own scoped config file
+#   - Matches the pattern real production platforms use (DaemonSets that
+#     update certs.d files on the fly)
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: dhi-trust-control-plane
+
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"
+
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP

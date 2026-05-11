@@ -1,0 +1,350 @@
+{
+  "metadata": {
+    "description": "Synthetic fleet for E1 drift observation experiment",
+    "variation_axes": [
+      "base_image_origin",
+      "signing_state",
+      "patch_age_days"
+    ],
+    "reference_date": "2026-05-09",
+    "service_count": 12
+  },
+  "services": [
+    {
+      "name": "auth-service",
+      "team": "identity-platform",
+      "language": "java",
+      "tier": "backend",
+      "base_image": {
+        "reference": "dhi.io/eclipse-temurin:21",
+        "origin": "dhi"
+      },
+      "trust": {
+        "signing_state": "signed_verified",
+        "attestation_count": 15,
+        "last_attestation_check": "2026-05-08"
+      },
+      "operational": {
+        "patch_age_days": 7,
+        "last_cve_scan": "2026-05-08",
+        "critical_cves": 0,
+        "high_cves": 0,
+        "replicas": 12
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": true,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "payment-api",
+      "team": "payments",
+      "language": "node",
+      "tier": "backend",
+      "base_image": {
+        "reference": "dhi.io/node:24",
+        "origin": "dhi"
+      },
+      "trust": {
+        "signing_state": "signed_verified",
+        "attestation_count": 15,
+        "last_attestation_check": "2026-05-07"
+      },
+      "operational": {
+        "patch_age_days": 12,
+        "last_cve_scan": "2026-05-07",
+        "critical_cves": 0,
+        "high_cves": 0,
+        "replicas": 24
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": true,
+        "handles_payment": true,
+        "pci_scope": true
+      }
+    },
+    {
+      "name": "report-generator",
+      "team": "analytics",
+      "language": "python",
+      "tier": "batch",
+      "base_image": {
+        "reference": "dhi.io/python:3.13",
+        "origin": "dhi"
+      },
+      "trust": {
+        "signing_state": "signed_verified",
+        "attestation_count": 15,
+        "last_attestation_check": "2026-05-08"
+      },
+      "operational": {
+        "patch_age_days": 5,
+        "last_cve_scan": "2026-05-08",
+        "critical_cves": 0,
+        "high_cves": 0,
+        "replicas": 4
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "metrics-collector",
+      "team": "platform-observability",
+      "language": "go",
+      "tier": "backend",
+      "base_image": {
+        "reference": "dhi.io/golang:1.23",
+        "origin": "dhi"
+      },
+      "trust": {
+        "signing_state": "signed_verified",
+        "attestation_count": 15,
+        "last_attestation_check": "2026-05-04"
+      },
+      "operational": {
+        "patch_age_days": 21,
+        "last_cve_scan": "2026-05-04",
+        "critical_cves": 0,
+        "high_cves": 1,
+        "replicas": 6
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "inventory-api",
+      "team": "inventory",
+      "language": "python",
+      "tier": "backend",
+      "base_image": {
+        "reference": "python:3.12",
+        "origin": "docker_hub_official"
+      },
+      "trust": {
+        "signing_state": "signed_unverifiable",
+        "attestation_count": 1,
+        "last_attestation_check": "2026-05-01"
+      },
+      "operational": {
+        "patch_age_days": 18,
+        "last_cve_scan": "2026-05-01",
+        "critical_cves": 0,
+        "high_cves": 4,
+        "replicas": 8
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "notification-worker",
+      "team": "messaging",
+      "language": "node",
+      "tier": "backend",
+      "base_image": {
+        "reference": "node:20",
+        "origin": "docker_hub_official"
+      },
+      "trust": {
+        "signing_state": "signed_unverifiable",
+        "attestation_count": 1,
+        "last_attestation_check": "2026-04-23"
+      },
+      "operational": {
+        "patch_age_days": 47,
+        "last_cve_scan": "2026-04-23",
+        "critical_cves": 1,
+        "high_cves": 6,
+        "replicas": 10
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "web-frontend",
+      "team": "web-platform",
+      "language": "node",
+      "tier": "frontend",
+      "base_image": {
+        "reference": "node:18",
+        "origin": "docker_hub_official"
+      },
+      "trust": {
+        "signing_state": "unsigned",
+        "attestation_count": 0,
+        "last_attestation_check": null
+      },
+      "operational": {
+        "patch_age_days": 73,
+        "last_cve_scan": "2026-02-26",
+        "critical_cves": 2,
+        "high_cves": 11,
+        "replicas": 16
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "analytics-pipeline",
+      "team": "analytics",
+      "language": "python",
+      "tier": "batch",
+      "base_image": {
+        "reference": "python:3.10",
+        "origin": "docker_hub_official"
+      },
+      "trust": {
+        "signing_state": "unsigned",
+        "attestation_count": 0,
+        "last_attestation_check": null
+      },
+      "operational": {
+        "patch_age_days": 95,
+        "last_cve_scan": "2026-02-04",
+        "critical_cves": 3,
+        "high_cves": 14,
+        "replicas": 2
+      },
+      "compliance": {
+        "environment": "staging",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "batch-etl",
+      "team": "data-engineering",
+      "language": "java",
+      "tier": "batch",
+      "base_image": {
+        "reference": "internal-registry.corp/etl-base:2024.q4",
+        "origin": "internal_built"
+      },
+      "trust": {
+        "signing_state": "signed_unverifiable",
+        "attestation_count": 1,
+        "last_attestation_check": "2025-12-18"
+      },
+      "operational": {
+        "patch_age_days": 142,
+        "last_cve_scan": "2025-12-18",
+        "critical_cves": 4,
+        "high_cves": 17,
+        "replicas": 3
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": false,
+        "handles_payment": true,
+        "pci_scope": true
+      }
+    },
+    {
+      "name": "data-pipeline",
+      "team": "data-engineering",
+      "language": "python",
+      "tier": "batch",
+      "base_image": {
+        "reference": "internal-registry.corp/spark-runner:0.9.4",
+        "origin": "internal_built"
+      },
+      "trust": {
+        "signing_state": "unsigned",
+        "attestation_count": 0,
+        "last_attestation_check": null
+      },
+      "operational": {
+        "patch_age_days": 67,
+        "last_cve_scan": "2026-03-03",
+        "critical_cves": 2,
+        "high_cves": 9,
+        "replicas": 5
+      },
+      "compliance": {
+        "environment": "staging",
+        "handles_pii": false,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    },
+    {
+      "name": "legacy-billing",
+      "team": "finance-systems",
+      "language": "python",
+      "tier": "backend",
+      "base_image": {
+        "reference": "internal-registry.corp/python27-legacy:final",
+        "origin": "internal_built"
+      },
+      "trust": {
+        "signing_state": "unsigned",
+        "attestation_count": 0,
+        "last_attestation_check": null
+      },
+      "operational": {
+        "patch_age_days": 540,
+        "last_cve_scan": "2024-11-15",
+        "critical_cves": 11,
+        "high_cves": 38,
+        "replicas": 4
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": true,
+        "handles_payment": true,
+        "pci_scope": true
+      }
+    },
+    {
+      "name": "archive-importer",
+      "team": "unknown",
+      "language": "python",
+      "tier": "batch",
+      "base_image": {
+        "reference": "python:2.7-slim",
+        "origin": "abandoned"
+      },
+      "trust": {
+        "signing_state": "unsigned",
+        "attestation_count": 0,
+        "last_attestation_check": null
+      },
+      "operational": {
+        "patch_age_days": 2200,
+        "last_cve_scan": "2020-04-25",
+        "critical_cves": 47,
+        "high_cves": 162,
+        "replicas": 1
+      },
+      "compliance": {
+        "environment": "prod",
+        "handles_pii": true,
+        "handles_payment": false,
+        "pci_scope": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Pin every dependency. Floating ranges (e.g. flask>=3) are an anti-pattern
+# in a supply chain story — the whole point of attestation is that the
+# artifact you signed matches what you actually shipped. Pinned versions
+# make that contract verifiable.
+#
+# Update by running locally:
+#   pip install --upgrade flask
+#   pip freeze | grep -E '^(Flask|Werkzeug|Jinja2|MarkupSafe|click|itsdangerous|blinker)' > requirements.txt
+#
+# Pinned to versions current as of 2026-05.
+Flask==3.1.2
+Werkzeug==3.1.4
+Jinja2==3.1.6
+MarkupSafe==3.0.4
+click==8.3.1
+itsdangerous==2.2.1
+blinker==1.9.1

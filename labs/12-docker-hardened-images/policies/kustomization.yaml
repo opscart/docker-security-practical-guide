@@ -1,0 +1,33 @@
+# kustomization.yaml
+#
+# Apply all trust-governance policies as a unit:
+#   kubectl apply -k labs/12-docker-hardened-images/policies/
+#
+# Remove them as a unit:
+#   kubectl delete -k labs/12-docker-hardened-images/policies/
+#
+# Roll out incrementally during a real migration: start by applying only
+# require-trusted-registry.yaml in Audit mode, observe violations for a
+# week, switch to Enforce, then layer on the signature and attestation
+# policies one at a time. The break-glass exception is the safety valve.
+# See docs/migration-playbook.md for the phased rollout pattern.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Foundation: registry origin enforcement.
+  # Apply this first. If this works, signature/attestation policies build on
+  # the same trust allow-list.
+  - require-trusted-registry.yaml
+
+  # Cryptographic enforcement: image must be cosign-signed.
+  - require-signature.yaml
+
+  # Provenance enforcement: image must have a signed CycloneDX SBOM.
+  - require-sbom-attestation.yaml
+
+  # Break-glass exception template. In production, exceptions are created
+  # per-incident, not pre-applied. This is shipped as a reference template
+  # for the lab's E3 walkthrough demonstration.
+  - break-glass-exception.yaml

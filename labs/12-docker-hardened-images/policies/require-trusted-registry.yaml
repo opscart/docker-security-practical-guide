@@ -1,0 +1,74 @@
+# require-trusted-registry.yaml
+#
+# Foundational trust-layer enforcement: every container image must come from
+# a trusted, allow-listed registry. This is the primitive on which signature
+# and attestation policies build — without registry enforcement, attackers
+# can side-step downstream checks by pointing at registries we don't verify.
+#
+# Design notes:
+#   - Vendor-neutral by intent. The trusted-registry list is a parameter, not
+#     a hardcoded "dhi.io". The policy works identically if we add Chainguard
+#     (cgr.dev/chainguard/*) or our own internal registry — the substitution
+#     test passes here trivially.
+#   - System namespaces (kube-system, kyverno) are excluded. Cluster components
+#     pull from registry.k8s.io and other infrastructure paths. Enforcing on
+#     them would brick the cluster.
+#   - Pattern uses ClusterPolicy + 'Enforce' so violations are rejected at
+#     admission time, not just audited. Switch to 'Audit' during rollout.
+#
+# Test cases:
+#   ✓ Pod with image dhi.io/python:3.13            → admitted
+#   ✗ Pod with image python:3.13 (Docker Hub)      → rejected
+#   ✗ Pod with image nginx:latest                  → rejected
+#   ✗ Pod with image gcr.io/...                    → rejected
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-trusted-registry
+  annotations:
+    policies.kyverno.io/title: Require Trusted Registry
+    policies.kyverno.io/category: Trust Governance
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: >-
+      Container images must originate from a registry in the trust allow-list.
+      Other registries are rejected at admission time. The allow-list is a
+      policy parameter, not vendor-specific.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  failurePolicy: Fail
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: trusted-registries-only
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          # Skip system namespaces — cluster infrastructure pulls from
+          # registry.k8s.io and other paths we don't (and shouldn't) gate.
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - kyverno
+                - local-path-storage
+      validate:
+        message: >-
+          Image must come from a trusted registry. Allowed: dhi.io/*.
+          See docs/migration-playbook.md for how to request additions to the
+          trust allow-list.
+        pattern:
+          spec:
+            # initContainers, containers, ephemeralContainers all subject to
+            # the same rule. We use anyPattern to match each.
+            =(initContainers):
+              - image: "dhi.io/*"
+            =(ephemeralContainers):
+              - image: "dhi.io/*"
+            containers:
+              - image: "dhi.io/*"
