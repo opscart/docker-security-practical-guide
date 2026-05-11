@@ -22,8 +22,16 @@ COPY requirements.txt ./
 
 # Install Python deps to a target directory we'll copy into the runtime stage.
 # --no-cache-dir avoids leaving pip cache artifacts in the final image.
-# --target/--prefix pattern lets us copy a self-contained site-packages tree.
-RUN pip install --no-cache-dir --user -r requirements.txt
+#
+# IMPORTANT: We use exec-form RUN (JSON array) here, not shell-form.
+# DHI distroless images have NO /bin/sh — Docker's default shell-form
+# `RUN pip install ...` would fail because it tries to wrap the command
+# in `/bin/sh -c`. Exec-form invokes the python binary directly.
+#
+# This is itself a lesson in why DHI is a security artifact: there's no
+# shell to exploit, no /bin/sh for an attacker (or us, accidentally) to
+# call. Our Dockerfile has to respect the same hardening.
+RUN ["python", "-m", "pip", "install", "--no-cache-dir", "--user", "-r", "requirements.txt"]
 
 # ----- Runtime stage -----
 
