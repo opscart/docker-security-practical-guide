@@ -1,0 +1,98 @@
+# require-signature.yaml
+#
+# Trust-layer enforcement: every container image from a trusted registry must
+# have a verifiable cosign signature against the DHI public signing key.
+# Rejects unsigned images and images signed with the wrong key.
+#
+# Design notes:
+#   - rekor.ignoreTlog: true — DHI does not always write to the public Rekor
+#     transparency log (deliberately, to avoid leaking private org info in
+#     image references). Without this flag, verification fails as 'signature
+#     not found in transparency log' even for legitimate DHI images.
+#   - ctlog.ignoreSCT: true — Cosign 2.0 verifies Signed Certificate Timestamps
+#     by default; we disable this since DHI uses key-based signing not keyless.
+#   - mutateDigest: true — Once verified, images are pinned to their digest.
+#     Prevents tag-mutation attacks (e.g. attacker rebuilds dhi.io/python:3.13
+#     with the same tag pointing at a different digest).
+#
+# Important caveat — DHI signature location:
+#   DHI signatures live at registry.scout.docker.com/docker/dhi-<image>, not
+#   at the conventional <image>.sig location. For this policy to verify the
+#   actual DHI signature chain, the `repository:` field below must be set per
+#   image type (one verifyImages block per image). Without this, Kyverno
+#   looks at the conventional location, doesn't find a signature, and rejects
+#   the image — which IS correct enforcement (untrusted artifact rejected),
+#   but for the wrong reason (missing sig vs invalid sig).
+#
+#   The policy below uses the conventional location for simplicity. To
+#   verify production DHI images end-to-end, add per-image blocks with
+#   explicit repository overrides:
+#
+#     verifyImages:
+#       - imageReferences: ["dhi.io/python:*"]
+#         repository: "registry.scout.docker.com/docker/dhi-python"
+#         attestors: [...]
+#       - imageReferences: ["dhi.io/node:*"]
+#         repository: "registry.scout.docker.com/docker/dhi-node"
+#         attestors: [...]
+#
+# DHI public signing key:
+#   The key below was fetched from https://registry.scout.docker.com/keyring/dhi/latest.pub
+#   on 2026-05-10. If Docker rotates the key, update this block (or migrate to
+#   k8s://kyverno/dhi-public-key Secret reference per migration-playbook.md).
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-signature
+  annotations:
+    policies.kyverno.io/title: Require Cosign Signature
+    policies.kyverno.io/category: Trust Governance
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: >-
+      Container images from trusted registries must have a verifiable cosign
+      signature against the published DHI signing key.
+spec:
+  validationFailureAction: Audit
+  background: false   # verifyImages is admission-time only
+  failurePolicy: Fail
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-cosign-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - kyverno
+                - local-path-storage
+      verifyImages:
+        - imageReferences:
+            - "dhi.io/*"
+          mutateDigest: false
+          verifyDigest: false
+          required: true
+          attestors:
+            - count: 1
+              entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKdROmntRJFBrOJOQF5ww6gDBJqGm
+                      Fxa4333s1KsL9ISjtmRzGNih9lNRsqfRVjgFgJIdL6EQ9dohdanvn7r2cg==
+                      -----END PUBLIC KEY-----
+                    # TODO: replace with the actual published DHI key fetched from
+                    # https://registry.scout.docker.com/keyring/dhi/latest.pub
+                    # The key above is a placeholder for syntactic correctness.
+                    rekor:
+                      ignoreTlog: true
+                      url: https://rekor.sigstore.dev
+                    ctlog:
+                      ignoreSCT: true

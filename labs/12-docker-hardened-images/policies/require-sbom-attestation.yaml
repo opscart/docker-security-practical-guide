@@ -1,0 +1,81 @@
+# require-sbom-attestation.yaml
+#
+# Trust-layer enforcement: every image from a trusted registry must have a
+# verifiable CycloneDX SBOM attestation. Goes beyond "is this image signed"
+# to "do we know what's IN this image, and is the inventory itself signed."
+#
+# This is the policy that turns "signed image" into "provenance-verifiable
+# image" — the trust layer's complete contract. Without SBOM attestation,
+# we trust the build artifact but not its composition.
+#
+# Design notes:
+#   - predicateType matches the URI we verified manually in tools/verify-image.sh
+#     (https://cyclonedx.org/bom/v1.6) and confirmed present on every DHI image
+#     during E2 testing.
+#   - Same Rekor/CT-log bypass flags as require-signature.yaml — DHI doesn't
+#     publish all attestations to the public transparency log.
+#   - 'conditions' block is intentionally omitted: we're enforcing the
+#     PRESENCE of a valid signed SBOM, not specific contents of the SBOM.
+#     Compliance teams can add conditions later (e.g. "no AGPL packages",
+#     "max 10 high CVEs at build time") — see docs/compliance/.
+#
+# Same DHI signature-location caveat as require-signature.yaml applies:
+#   For end-to-end verification against real DHI images, set per-image
+#   `repository:` overrides pointing to registry.scout.docker.com/docker/dhi-*
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-sbom-attestation
+  annotations:
+    policies.kyverno.io/title: Require Signed CycloneDX SBOM
+    policies.kyverno.io/category: Trust Governance
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Container images must have a verifiable CycloneDX SBOM attestation.
+      Signed signature alone is not sufficient — the bill of materials must
+      also be cryptographically attested.
+spec:
+  validationFailureAction: Audit
+  background: false
+  failurePolicy: Fail
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-sbom-attestation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - kyverno
+                - local-path-storage
+      verifyImages:
+        - imageReferences:
+            - "dhi.io/*"
+          mutateDigest: false
+          verifyDigest: false
+          required: true
+          attestations:
+            - type: https://cyclonedx.org/bom/v1.6
+              attestors:
+                - count: 1
+                  entries:
+                    - keys:
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKdROmntRJFBrOJOQF5ww6gDBJqGm
+                          Fxa4333s1KsL9ISjtmRzGNih9lNRsqfRVjgFgJIdL6EQ9dohdanvn7r2cg==
+                          -----END PUBLIC KEY-----
+                        # TODO: replace with actual DHI key (see require-signature.yaml)
+                        rekor:
+                          ignoreTlog: true
+                          url: https://rekor.sigstore.dev
+                        ctlog:
+                          ignoreSCT: true

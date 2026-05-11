@@ -1,0 +1,42 @@
+# kind-config.yaml — kind cluster with registry mirror configured.
+#
+# The containerdConfigPatches block tells the cluster's containerd how to
+# resolve dhi.io: instead of going to the public dhi.io endpoint, route to
+# our local pull-through cache running on the host.
+#
+# The endpoint URL uses the kind-network DNS name "kind-registry" because
+# the cluster nodes run inside the kind Docker network, not on the host's
+# loopback. The bootstrap script connects the registry container to the
+# kind network so this name resolves.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: dhi-trust-control-plane
+
+containerdConfigPatches:
+  # Route dhi.io pulls through our local cache (kind-registry:5000)
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."dhi.io"]
+        endpoint = ["http://kind-registry:5000"]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]
+        endpoint = ["http://kind-registry:5000"]
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."kind-registry:5000".tls]
+        insecure_skip_verify = true
+
+nodes:
+  - role: control-plane
+    # Allow Kyverno's webhook traffic (admission control hooks)
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP

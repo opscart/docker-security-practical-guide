@@ -1,0 +1,8 @@
+# Keep the build context small. Anything not on this list ends up in the
+# image layer and thus in the SBOM. Everything in this dir EXCEPT the
+# explicit allow-list below is excluded.
+
+*
+!Dockerfile
+!app.py
+!requirements.txt
