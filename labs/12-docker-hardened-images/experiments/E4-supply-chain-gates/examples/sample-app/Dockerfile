@@ -38,8 +38,10 @@ RUN ["python", "-m", "pip", "install", "--no-cache-dir", "--user", "-r", "requir
 FROM dhi.io/python:3.13
 
 # Copy installed packages from the builder stage. The DHI Python image runs
-# as user 'nonroot' (uid 65532) by default; their home is /home/nonroot.
-COPY --from=builder /root/.local /home/nonroot/.local
+# as user 'nonroot' (uid 65532) by default; HOME is /home/nonroot, so
+# `pip install --user` installs to /home/nonroot/.local — NOT /root/.local.
+# (Verified: docker run dhi.io/python:3.13 python -c 'import os; print(os.environ["HOME"])')
+COPY --from=builder /home/nonroot/.local /home/nonroot/.local
 ENV PATH=/home/nonroot/.local/bin:$PATH \
     PYTHONPATH=/home/nonroot/.local/lib/python3.13/site-packages
 
