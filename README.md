@@ -31,7 +31,7 @@ This Docker Security guide is part of the **OpsCart Labs** collection — produc
 
 **🔐 Docker Security: Practical Guide** (This Repository)
 - Runtime escape, secrets management, image hardening, and secret management
-- 10 labs covering CIS benchmarks to production security patterns
+- 12 labs covering CIS benchmarks to production security patterns
 - **Status:** Active development
 
 **☸️ Certified Kubernetes Administrator Exam Prep** ([production-cka](https://github.com/opscart/production-cka))
@@ -102,7 +102,7 @@ Foundation labs covering essential Docker security concepts.
 
 ---
 
-### [Lab 03: Least Privilege Containers](./labs/03-least-privilege/)
+### [Lab 03: Least Privilege Containers](./labs/03-vulnerability-scanning/)
 
 **What You'll Learn:**
 - Run containers as non-root users
@@ -337,7 +337,7 @@ Hands-on container escape scenarios — understanding how attackers break out of
 
 ---
 
-### Level 4: Production Security (Lab 10)
+### Level 4: Production Security (Lab 10-11)
 
 Advanced production security patterns for secret management.
 
@@ -499,11 +499,107 @@ Docker Failure → AutoGen Agent (GPT-4) → MCP Server (Security Pipeline) → 
 
 ---
 
-- **Lab 12**: Secrets Management - Tier 2 Deep-Dive (Linux VM Required)
-  - Process memory forensics and secret extraction
-  - Production Vault with TLS, HA, and dynamic secrets
-  - Zero-downtime secret rotation patterns
-  - Compliance audit logging (PCI-DSS, SOC 2)
+### Level 5: Trust Governance (Lab 12)
+
+### [Lab 12: Docker Hardened Images as a Container Trust Control Plane](./labs/12-docker-hardened-images/)
+
+**What You'll Learn:**
+- Build a complete container trust control plane on top of Docker Hardened Images
+- Enforce vendor-neutral admission policies with Kyverno (registry, signature, SBOM)
+- Implement keyless cosign signing in GitHub Actions with verifiable supply chain attestations
+- Operate distroless containers in production with three documented debug patterns
+- Run a 12-service synthetic fleet audit demonstrating drift observation at scale
+- Apply the substitution test: prove the architecture works with Chainguard, self-built distroless, or any signing primitive
+
+**Key Concepts:**
+- Three-layer model: Supply Chain → Trust → Enforcement, joined by an observable control loop
+- Vendor-neutral policy primitives — policies enforce "trusted registry," not "DHI specifically"
+- Phased rollout: Enforce mode for registry origin, Audit mode for signature/SBOM during migration
+- Break-glass exception pattern via Kyverno PolicyException with namespace-label gates
+- Keyless cosign signing using GitHub OIDC (no private keys to manage, rotate, or leak)
+- DHI substitution test: same architecture works with any hardened image foundation
+
+**5 Hypothesis-Driven Experiments (H/E/O/C format):**
+
+**E1: Drift Observation** (15 min)
+- 12-service synthetic fleet with explicit variation matrix (origin × signing × patch age)
+- `audit-fleet.sh` produces risk-graded inventory (CRITICAL/HIGH/MEDIUM/LOW/OK)
+- `analyze-drift.py` 7-section deep analysis report
+- Headline finding: unsigned services average 130× more critical CVEs than signed_verified
+- Validates: Image-level controls collapse without fleet-wide enforcement
+
+**E2: Trust Provenance Verification** (10 min)
+- `verify-image.sh` validates four trust signals on real DHI images
+- Attestation discovery → CycloneDX SBOM → SLSA provenance v0.2 → OpenVEX
+- Uses `docker scout attest get --verify --skip-tlog` with cosign-equivalent verification
+- Demonstrates: DHI signatures live at `registry.scout.docker.com/docker/dhi-*`, not conventional location
+- Validates: Image trust requires four signals, not one
+
+**E3: Admission Enforcement** (15 min)
+- Vendor-neutral Kyverno policies: trusted-registry (Enforce), signature (Audit), SBOM (Audit)
+- Break-glass exception via PolicyException with `trust.governance.io/break-glass-approved` label
+- Three demonstrated patterns: strict enforcement, phased Audit rollout, audited bypass
+- Empirical result: Kubernetes admission webhook rejects nginx, admits dhi.io/python, allows break-glass
+- Validates: Build-time security collapses if runtime admission lacks teeth
+
+**E4: Supply Chain Gates** (workflow runs ~5 min on push)
+- GitHub Actions workflow with keyless cosign signing via GitHub OIDC
+- 18-step pipeline: build → push → sign → SBOM attest → vuln scan attest → verify
+- Image pushed to ghcr.io with three cryptographic attestations, verifiable by anyone
+- Companion: `generate-sbom-delta.sh` computes package delta vs DHI base
+- Validates: Without build-time gates, runtime enforcement absorbs failures
+
+**E5: Runtime Failure Modes** (documentation + walkthroughs)
+- Answers the "no shell at 2 AM" operational objection to distroless
+- Three patterns: ephemeral debug containers, dev-variant pattern, debug sidecar
+- Three runbook scenarios: unreachable service, crashloop, OOM kill
+- `restrict-dev-variants` policy: `-dev` variants admitted only in `environment=dev` namespaces
+- Validates: Distroless is operationally viable with patterns that preserve the trust contract
+
+**Architecture:**
+```
+                              The Control Loop
+              ┌──────────────────────────────────────────────┐
+              ▼                                              │
+    ┌─────────────────┐    ┌─────────────────┐    ┌──────────┴────────┐
+    │   Supply Chain  │───▶│      Trust      │───▶│    Enforcement    │
+    │      Layer      │    │      Layer      │    │       Layer       │
+    │     (E4)        │    │     (E2)        │    │       (E3)        │
+    └─────────────────┘    └─────────────────┘    └─────────┬─────────┘
+              ▲                                              │
+              │       Operations: drift (E1), failure modes (E5)
+              └──────────────────────────────────────────────┘
+```
+
+**Technologies:**
+- **Docker Hardened Images (DHI)** — hardened base images with signed SBOM + SLSA + VEX attestations
+- **Kyverno 3.3.4** — Kubernetes-native policy engine for admission control
+- **Cosign 2.4.1** — signature and attestation tooling (keyless via Sigstore)
+- **Syft + Grype** — CycloneDX SBOM generation and vulnerability scanning
+- **kind 0.31.0** — local Kubernetes for the lab environment
+- **GitHub Actions** — CI/CD with keyless OIDC signing
+
+**Trust Contract Enforced:**
+Any pod admitted to the cluster must satisfy four conditions:
+1. **Origin** — image from allow-listed registry
+2. **Signature** — image has valid cosign signature
+3. **Provenance** — image has verifiable CycloneDX SBOM attestation
+4. **Vulnerability scan** — image has signed vulnerability scan attestation
+
+**Time:** 90–120 minutes (setup + 5 experiments)
+
+**Why This Matters:**
+- Container security failures in regulated environments are governance failures, not image failures
+- Demonstrates the architectural pattern that turns hardened images into security outcomes
+- Vendor-neutral framing: the same patterns work with Chainguard, self-built distroless, or other primitives
+- Includes a substantive [troubleshooting log](./labs/12-docker-hardened-images/docs/troubleshooting.md) documenting real friction points encountered during the build
+- Production-grade: includes phased migration playbook, compliance mapping (PCI-DSS 4.0 §6.3, 21 CFR Part 11), and break-glass patterns
+
+**Prerequisites:**
+- Docker Desktop with at least 4 CPU / 6 GB RAM
+- `docker login dhi.io` (free tier suffices)
+- Tools: `kind`, `kubectl`, `helm`, `jq`, `cosign`, `syft` (install via `brew install`)
+- GitHub repository for E4 (or skip E4's pipeline run; the YAML is the artifact)
 
 ---
 
@@ -627,13 +723,28 @@ Lab 09: Runtime Escape
 ```
 
 ### Level 4: Production Security
+```
+Lab 10: Secret Managment
+Lab 11: Docker MCP Gateway for AI-Powered Container Remediation
+```
 
+### Level 5: Trust Governance (Lab 12)
+```
+Lab 12: Docker Hardened Images as a Container Trust Control Plane
+    **5 Hypothesis-Driven Experiments (H/E/O/C format):**
+        **E1: Drift Observation** 
+        *E2: Trust Provenance Verification**
+        *E3: Admission Enforcement**
+        **E4: Supply Chain Gates**
+        **E5: Runtime Failure Modes**
+```
 
 **Estimated Time:** 
 - Level 1 (Labs 01-06): 4-6 hours
 - Level 2 (Labs 07-08): 2-3 hours
 - Level 3 (Lab 09): 2-2.5 hours
-- Level 4 (Lab 10): 2-2.5 minutes
+- Level 4 (Lab 10-11): 2-2.5 hours
+- Level 5 (Lab 12):1.5-2 hours
 - Complete guide: 11.5-13 hours
 - With practice exercises: 15-19 hours
 
@@ -902,18 +1013,6 @@ If you find this guide helpful:
 3. 📢 Share with your team
 4. 💬 Provide feedback
 5. 🤝 Contribute improvements
-
----
-
-## 📈 What's Next?
-
-### Upcoming Labs (Planned)
-
-- **Lab 12**: Secrets Management - Tier 2 Deep-Dive (Linux VM Required)
-  - Process memory forensics and secret extraction
-  - Production Vault with TLS, HA, and dynamic secrets
-  - Zero-downtime secret rotation patterns
-  - Compliance audit logging (PCI-DSS, SOC 2)
 
 
 ### Stay Updated

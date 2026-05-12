@@ -1,0 +1,57 @@
+# deploy-dev-variant.yaml
+#
+# Example pod using dhi.io/python:3.13-dev. Deployed to the dev-debug
+# namespace, which must be labelled environment=dev for the policy
+# refinement to permit it.
+#
+# Setup:
+#   kubectl create namespace dev-debug
+#   kubectl label namespace dev-debug environment=dev
+#
+# Apply:
+#   kubectl apply -f deploy-dev-variant.yaml
+#
+# Then exec into it (it has a real shell, unlike the production variant):
+#   kubectl -n dev-debug exec -it dhi-app-dev -- bash
+#
+# Trying to apply this same manifest to a namespace WITHOUT the
+# environment=dev label will be rejected by the restrict-dev-variants
+# policy.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dhi-app-dev
+  namespace: dev-debug
+  labels:
+    app: dhi-app-dev
+    environment: dev      # required by the policy refinement
+spec:
+  # Long-running command so the pod stays up for exec sessions.
+  # In real dev usage, this would be your actual application command.
+  containers:
+    - name: dhi-app-dev
+      image: dhi.io/python:3.13-dev
+      imagePullPolicy: Never    # for local lab; pre-loaded via ctr import
+      command: ["python", "-c"]
+      args:
+        - |
+          import time
+          print("dhi-app-dev pod running with dev variant (has bash, debug tools)")
+          print("Exec in with: kubectl -n dev-debug exec -it dhi-app-dev -- bash")
+          while True:
+              time.sleep(60)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+  restartPolicy: Always
