@@ -1,3 +1,8 @@
+![License](https://img.shields.io/github/license/opscart/docker-security-practical-guide)
+![Stars](https://img.shields.io/github/stars/opscart/docker-security-practical-guide?style=social)
+![Last commit](https://img.shields.io/github/last-commit/opscart/docker-security-practical-guide)
+![GitHub Actions](https://img.shields.io/github/actions/workflow/status/opscart/docker-security-practical-guide/main.yml)
+
 # Docker Security: A Practical Guide
 
 A comprehensive, hands-on guide to Docker security best practices with real-world examples and lab exercises.
