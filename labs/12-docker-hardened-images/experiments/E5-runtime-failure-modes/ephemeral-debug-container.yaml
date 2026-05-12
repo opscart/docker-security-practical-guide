@@ -1,2 +1,58 @@
-# Ephemeral debug container manifest using DHI dev variant
-# TODO: implement
+# ephemeral-debug-container.yaml
+#
+# Pattern 1 declarative form. Shows how an ephemeral debug container would
+# look as a Kubernetes API object. Most teams will invoke this via
+# `kubectl debug` (see debug-distroless.sh) rather than applying YAML,
+# but the YAML form is useful for:
+#   - GitOps tooling that records every ephemeral-container attach as a
+#     reviewable change
+#   - Documenting the exact attach pattern in postmortems
+#   - Wrapping ephemeral-container attaches in audit-trail workflows
+#
+# Note: ephemeralContainers cannot be added via `kubectl apply`. They
+# must be attached via the /ephemeralcontainers subresource:
+#
+#   kubectl debug ...
+#     ↓ equivalent to ↓
+#   kubectl --raw /api/v1/namespaces/<ns>/pods/<pod>/ephemeralcontainers \
+#     --request=PATCH \
+#     --header 'Content-Type: application/strategic-merge-patch+json' \
+#     --data <patch-json>
+#
+# The YAML below is the *patch* that gets applied, not a standalone manifest.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dhi-app      # the pod we're attaching to
+spec:
+  ephemeralContainers:
+    - name: debug-shell
+      image: busybox:1.37          # Substitute your team's trusted debug image.
+      imagePullPolicy: IfNotPresent
+      command: ["sh"]
+      stdin: true
+      tty: true
+      # targetContainerName is the critical field. Without it, the debug
+      # container only sees its own PID/network namespaces — useless for
+      # observing the application. With it, the debug container joins the
+      # target container's namespaces.
+      targetContainerName: dhi-app
+      # Set explicit, restrictive security context. The debug container
+      # should not bring more privilege than it needs.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      # Resources: tight limits so a runaway debug session can't take down
+      # the node. Tune to your team's typical debug workload.
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi

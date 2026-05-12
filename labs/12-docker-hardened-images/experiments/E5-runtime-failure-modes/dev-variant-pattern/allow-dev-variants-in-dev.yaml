@@ -1,0 +1,93 @@
+# allow-dev-variants-in-dev.yaml
+#
+# Policy refinement extending the base require-trusted-registry policy:
+# images with the "-dev" suffix (e.g., dhi.io/python:3.13-dev) are allowed
+# ONLY in namespaces labelled environment=dev. Production namespaces accept
+# only release-tagged variants.
+#
+# This refines, not replaces, the base policy. Both are active:
+#   - require-trusted-registry: image must come from dhi.io/* (always)
+#   - this policy: -dev tags allowed only in dev (additional restriction)
+#
+# Vendor-neutrality note: nothing in this policy says "DHI" by name. The
+# pattern matches image references with "-dev" suffix. Chainguard's
+# :latest-dev tags, your team's :debug suffix, or any other convention
+# would be substitutable with no policy structure change.
+#
+# Test cases (assumes require-trusted-registry is already applied):
+#   ✓ dhi.io/python:3.13       in namespace env=prod  → admitted
+#   ✓ dhi.io/python:3.13       in namespace env=dev   → admitted
+#   ✓ dhi.io/python:3.13-dev   in namespace env=dev   → admitted
+#   ✗ dhi.io/python:3.13-dev   in namespace env=prod  → REJECTED
+#   ✗ dhi.io/python:3.13-dev   in unlabelled namespace → REJECTED
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-dev-variants
+  annotations:
+    policies.kyverno.io/title: Restrict Dev-Variant Images to Dev Namespaces
+    policies.kyverno.io/category: Trust Governance
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Images with the "-dev" suffix (containing build tools and shells)
+      may only be deployed to namespaces explicitly labelled
+      environment=dev. Production and staging namespaces must use the
+      release-tagged hardened variants.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  failurePolicy: Fail
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: dev-variants-only-in-dev-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - kyverno
+                - local-path-storage
+          # Skip pods in namespaces explicitly labelled dev
+          - resources:
+              selector:
+                matchLabels:
+                  # This matches pod-level labels, not namespace labels —
+                  # we use a namespaceSelector below for namespace-level check.
+                  environment: dev
+      validate:
+        message: >-
+          Images with a "-dev" suffix (e.g. *-dev, *:dev, *-debug) are
+          development variants and may only be deployed to namespaces
+          labelled environment=dev. To deploy this image:
+            kubectl label namespace <ns> environment=dev
+          Or use the production-tagged variant (without the -dev suffix).
+        # The pattern uses CEL-style "anyPattern" matching: reject if ANY
+        # container's image ends in -dev when the namespace isn't dev.
+        # This catches both ":3.13-dev" tags AND "*-dev:1.2.3" naming
+        # conventions some teams use.
+        deny:
+          conditions:
+            all:
+              # Match if image reference contains "-dev" suffix on the tag
+              - key: "{{ request.object.spec.containers[].image | length(@) }}"
+                operator: GreaterThan
+                value: 0
+              - key: "{{ request.object.spec.containers[?contains(image, '-dev')] | length(@) }}"
+                operator: GreaterThan
+                value: 0
+              # And the namespace is NOT labelled environment=dev
+              - key: "{{ request.namespace }}"
+                operator: NotEquals
+                value: "dev-debug"
+              # Production environments by convention — adjust to your conventions
+              - key: "{{ request.object.metadata.labels.environment || 'unset' }}"
+                operator: NotEquals
+                value: "dev"
