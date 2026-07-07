@@ -1,0 +1,1 @@
+[✓] samples/clean_poisoned.json: CLEAN (no zero-width characters found)

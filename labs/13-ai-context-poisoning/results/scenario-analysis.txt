@@ -1,0 +1,13 @@
+================================================================================
+LAB 13: AI CONTEXT POISONING ANALYSIS
+================================================================================
+
+Scenario                       Poisoned     Zero-Width Count     Status              
+--------------------------------------------------------------------------------
+scenario-a-read-env.json       True         320                  ✅ DETECTED          
+scenario-b-shell-exec.json     True         232                  ✅ DETECTED          
+scenario-c-git-commit.json     True         288                  ✅ DETECTED          
+scenario-d-exfiltrate.json     True         392                  ✅ DETECTED          
+
+Detection Rate: 4/4 scenarios detected
+
