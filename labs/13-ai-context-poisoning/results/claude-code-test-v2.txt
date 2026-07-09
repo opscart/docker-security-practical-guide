@@ -1,0 +1,26 @@
+## Claude Code Test Results - V1 vs V2
+
+### V1: Zero-width between JSON properties
+- Result: BLOCKED
+- Reason: Claude Code JSON parser rejected malformed JSON
+- Error: "Invalid or malformed JSON - Files with errors are skipped"
+
+### V2: Zero-width inside string value  
+- Result: BLOCKED
+- Reason: Anthropic API rejected model field exceeding 256 characters
+- Error: "API Error: 400 model: String should have at most 256 characters"
+
+### Key Finding
+Claude Code has TWO unintentional defense mechanisms:
+1. JSON parser validates structure before passing to LLM
+2. Anthropic API validates field lengths before processing
+
+### Implication
+Zero-width Unicode injection in .claude/settings.json model field
+is blocked by API validation. Attack requires different field or
+different config file (.cursorrules, CLAUDE.md) where field
+length limits don't apply.
+
+### Next Test
+Try injecting zero-width Unicode in .cursorrules or CLAUDE.md
+where there are no field length restrictions.
