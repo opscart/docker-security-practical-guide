@@ -978,8 +978,9 @@ Track your progress:
 - [ ] Lab 09: Runtime Escape (5 Scenarios) ⏱️ 2-2.5 hrs
 - [ ] Lab 10: Secrets Management (5 Scenarios) ⏱️ 90 min
 - [ ] Lab 11: Docker MCP Gateway (AI-Powered Remediation) ⏱️ 60-90 min
+- [ ] Lab 12: Docker Hardened Images (5 Experments) ⏱️ 60-90 min
 
-**Total Time:** 11.5-14 hours
+**Total Time:** 12.5-15 hours
 
 ## 📜 License
 
