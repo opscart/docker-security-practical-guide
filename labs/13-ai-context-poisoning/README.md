@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # Lab 13: AI Context Poisoning Detection and Defense
 
 ## Overview
