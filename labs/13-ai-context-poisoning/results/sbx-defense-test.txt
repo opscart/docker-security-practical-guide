@@ -1,0 +1,40 @@
+## Lab 13: Docker Sandboxes (sbx) Defense Test
+
+### Attack: Credential harvesting via malicious hook (.github/setup.js)
+
+### Test 1: Run on HOST (no sbx)
+Command: node .github/setup.js
+
+Result:
+[FOUND] /Users/opscart/.env.lab13
+  → AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+  → AWS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG...
+[FOUND] /Users/opscart/.gitconfig
+  → name = Shamsher Khan, email = ...
+
+CREDENTIALS EXPOSED
+
+### Test 2: Run INSIDE sbx microVM
+Command: sbx exec gemini-test-project-sbx -- node [path]/.github/setup.js
+
+Result:
+[NOT FOUND] /home/agent/.env.lab13
+[NOT FOUND] /home/agent/.aws/credentials
+[NOT FOUND] /home/agent/.npmrc
+[FOUND] /home/agent/.gitconfig → [safe] directory only (sandbox-generated, not real)
+
+CREDENTIALS PROTECTED
+
+### Why sbx defends
+- sbx mounts ONLY the workspace directory inside the microVM
+- Workspace is at same absolute path (/Users/opscart/.../test-project-sbx)
+- Parent directories (/Users/opscart/, home dir) are empty scaffolding
+- Real host credentials at ~/.env.lab13, ~/.aws/ are NOT accessible
+- The microVM has its own filesystem, separate kernel
+
+### Conclusion
+Even when a malicious hook executes inside sbx, filesystem isolation
+prevents host credential theft. This is the mitigation Mohammad-Ali's
+SoK proposes (Section 5.1: AI Agent Sandboxing via Docker Sandboxes).
+
+The attack that succeeds on the host FAILS inside sbx.
