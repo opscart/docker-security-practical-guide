@@ -1,7 +1,8 @@
 ![License](https://img.shields.io/github/license/opscart/docker-security-practical-guide)
 ![Stars](https://img.shields.io/github/stars/opscart/docker-security-practical-guide?style=social)
 ![Last commit](https://img.shields.io/github/last-commit/opscart/docker-security-practical-guide)
-![GitHub Actions](https://img.shields.io/github/actions/workflow/status/opscart/docker-security-practical-guide/main.yml)
+![GitHub Actions](https://img.shields.io/github/actions/workflow/status/opscart/docker-security-practical-guide/blob/master/labs/12-docker-hardened-images/experiments/E4-supply-chain-gates/github-actions/supply-chain-gate.yml)
+
 
 # Docker Security: A Practical Guide
 
