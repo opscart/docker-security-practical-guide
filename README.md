@@ -5,8 +5,6 @@
 
 # Docker Security: A Practical Guide
 
-# Docker Security: A Practical Guide
-
 A hands-on Docker and container security guide built around reproducible labs, attack scenarios, defensive controls, and production-oriented validation.
 
 <a id="what-youll-learn"></a>
