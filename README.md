@@ -1,1038 +1,516 @@
-![License](https://img.shields.io/github/license/opscart/docker-security-practical-guide)
-![Stars](https://img.shields.io/github/stars/opscart/docker-security-practical-guide?style=social)
-![Last commit](https://img.shields.io/github/last-commit/opscart/docker-security-practical-guide)
-![GitHub Actions](https://img.shields.io/github/actions/workflow/status/opscart/docker-security-practical-guide/main.yml)
+[![License](https://img.shields.io/github/license/opscart/docker-security-practical-guide)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/opscart/docker-security-practical-guide?style=social)](https://github.com/opscart/docker-security-practical-guide/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/opscart/docker-security-practical-guide)](https://github.com/opscart/docker-security-practical-guide/commits/master)
+[![Supply Chain Gate](https://github.com/opscart/docker-security-practical-guide/actions/workflows/supply-chain-gate.yml/badge.svg?branch=master)](https://github.com/opscart/docker-security-practical-guide/actions/workflows/supply-chain-gate.yml)
 
 # Docker Security: A Practical Guide
 
-A comprehensive, hands-on guide to Docker security best practices with real-world examples and lab exercises.
+# Docker Security: A Practical Guide
 
-## 🎯 What You'll Learn
+A hands-on Docker and container security guide built around reproducible labs, attack scenarios, defensive controls, and production-oriented validation.
 
-This guide takes you from basic Docker security concepts to advanced hardening techniques through practical, reproducible lab exercises. Each lab builds on previous knowledge while remaining self-contained.
+<a id="what-youll-learn"></a>
+## What You'll Learn
 
+The repository progresses from foundational Docker hardening to runtime escape analysis, secrets management, software supply-chain trust, AI-assisted remediation, and AI context-poisoning defenses.
+
+<a id="core-topics-covered"></a>
 ### Core Topics Covered
 
-- **Security Auditing**: Using Docker Bench Security for CIS compliance
-- **Secure Images**: Building hardened, minimal container images
-- **Least Privilege**: Implementing proper access controls
-- **Image Signing**: Verifying container authenticity
-- **Network Security**: Isolating and securing container communications
-- **AI/ML Security**: Protecting machine learning workloads
-- **Supply Chain Security**: SBOM generation and vulnerability scanning
-- **Network Architecture**: Multi-tier segmentation and encryption
+- **Security auditing:** Docker Bench Security and CIS-aligned checks
+- **Container hardening:** least privilege, Linux capabilities, read-only filesystems, and resource controls
+- **Vulnerability management:** Trivy, Syft, Grype, SBOMs, and policy enforcement
+- **Image trust:** Cosign signing, provenance, attestations, and admission controls
+- **Seccomp:** application-specific syscall filtering
+- **Network security:** segmentation, internal networks, TLS, and misconfiguration testing
+- **Runtime security:** Docker socket exposure, privileged containers, dangerous capabilities, host mounts, and `/proc` or `/sys` exposure
+- **Secrets management:** Docker Swarm secrets, Vault, BuildKit secrets, secret scanning, and audit evidence
+- **AI workload security:** ML container controls, secured MCP tool access, and AI context-poisoning defenses
+- **Trust governance:** hardened images, Kyverno policies, signed attestations, and fleet drift analysis
 
-## 🌐 OpsCart Labs Platform
+<a id="opscart-labs-platform"></a>
+## OpsCart Labs Platform
 
-This Docker Security guide is part of the **OpsCart Labs** collection — production-grade hands-on labs built from real Fortune 500 retail & pharmaceutical cluster experience.
+This guide is part of [OpsCart Labs](https://opscart.com/labs/), a collection of open-source, hands-on labs informed by production cloud and Kubernetes operations.
 
-**Visit [OpsCart Labs](https://opscart.com/labs/)** for:
-- **70+ Total Labs** across 2 lab series
-- **~60 Hours** of hands-on content
-- **GitHub-Backed** — All labs available as open source
-- **Automated Validation** — Exam tips, real scenarios, war-room notes
-
+<a id="available-lab-series"></a>
 ### Available Lab Series
 
-**🔐 Docker Security: Practical Guide** (This Repository)
-- Runtime escape, secrets management, image hardening, and secret management
-- 12 labs covering CIS benchmarks to production security patterns
-- **Status:** Active development
+**Docker Security: A Practical Guide** — this repository
 
-**☸️ Certified Kubernetes Administrator Exam Prep** ([production-cka](https://github.com/opscart/production-cka))
-- 70 hands-on labs covering every CKA exam domain
-- Automated validation scripts, real exam tips, Fortune 500 cluster notes
-- Cluster Arch 25% • Networking 20% • Workloads 15% • Storage 10% • Troubleshooting 30%
-- **Status:** 5/70 labs complete
+- 13 labs covering Docker security from auditing through AI context defense
+- Reproducible scripts, configurations, policies, and captured experiment evidence
+- Status: active development
 
-**🎯 Kubernetes Practical Exercises** (Coming Soon)
-- Focused exercises covering core Kubernetes concepts
-- Ideal for engineers who want to sharpen specific skills without full exam prep
-- Pods & Workloads • Networking • Storage • Debugging
+**[Certified Kubernetes Administrator Exam Prep](https://github.com/opscart/production-cka)**
 
+- Hands-on CKA preparation labs
+- Automated validation and operational notes
+- Status: active development
+
+<a id="why-opscart-labs"></a>
 ### Why OpsCart Labs?
 
-**Production-Grade** — Built from managing 8+ production AKS clusters  
-**Real Scenarios** — Fortune 500 pharmaceutical & retail experience  
-**GitHub-First** — All content open source and version controlled  
-**Practitioner Authority** — IEEE Senior Member, DZone Core Member, CNCF contributor  
+- Built from practical Docker, Kubernetes, cloud, and DevOps experience
+- Designed around reproducible scenarios rather than theory alone
+- Maintained in public Git repositories
+- Intended for engineers, security practitioners, auditors, and platform teams
 
-**Explore all labs:** [opscart.com/labs](https://opscart.com/labs/)
+<a id="documentation-hub"></a>
+## Documentation Hub
 
----
+Use this section as the central entry point for the repository.
 
-## 📚 Lab Structure
+| Area | Purpose |
+|---|---|
+| [Lab Catalog](#lab-catalog) | Select a hands-on lab by security domain or learning level |
+| [Publications and Research](./docs/publications-and-research.md) | Connect formal research, CNCF publications, practitioner articles, and implementation evidence |
+| [Additional Resources](./docs/additional-resources.md) | Browse official documentation, standards, security tools, and primary research |
+| [Setup Guide](./docs/setup-guide.md) | Prepare Docker, shared tooling, and the common lab environment |
+| [Troubleshooting Guide](./docs/troubleshooting.md) | Diagnose shared Docker, Compose, networking, tooling, and Kubernetes problems |
+| [Repository Issues](https://github.com/opscart/docker-security-practical-guide/issues) | Report broken links, reproducibility problems, or documentation corrections |
 
-### Level 1: Fundamentals (Labs 01-06)
+### Suggested Routes
 
-Foundation labs covering essential Docker security concepts.
+- **New to the repository:** [Setup Guide](./docs/setup-guide.md) → [Lab Catalog](#lab-catalog) → Lab 01
+- **Docker or container security practitioner:** [Lab Catalog](#lab-catalog) → Labs 02–10
+- **Supply-chain or platform engineer:** Labs 03, 04, 07, 10, and 12
+- **AI and agent-security reader:** Labs 06, 11, and 13
+- **Research or publication reader:** [Publications and Research](./docs/publications-and-research.md)
+- **Looking for authoritative references:** [Additional Resources](./docs/additional-resources.md)
+- **A lab failed:** Lab README → [Troubleshooting Guide](./docs/troubleshooting.md) → repository issue
 
----
+<a id="lab-structure"></a>
+<a id="lab-catalog"></a>
+## Lab Catalog
 
-### [Lab 01: Security Auditing with Docker Bench](./labs/01-docker-bench-security/)
+Each lab has its own README with prerequisites, detailed steps, validation, expected results, and cleanup instructions. The root README intentionally provides a concise catalog so lab-specific documentation remains the source of truth.
 
-**What You'll Learn:**
-- Run comprehensive security audits using Docker Bench Security
-- Understand CIS Docker Benchmark compliance checks
-- Identify common security misconfigurations
-- Fix vulnerable container configurations
+<a id="level-1-fundamentals-labs-01-06"></a>
+### Level 1: Foundations (Labs 01–06)
 
-**Key Concepts:**
-- Privileged container detection
-- Network namespace isolation
-- Capability management
-- Security profile enforcement
+<a id="lab-01-security-auditing-with-docker-bench"></a>
+#### [Lab 01: Security Auditing with Docker Bench](./labs/01-docker-bench-security/)
 
-**Time:** 30-45 minutes
+Run Docker Bench Security, interpret CIS-aligned findings, identify dangerous configurations, and review practical remediations.
 
----
+**Estimated time:** 30–45 minutes
 
-### [Lab 02: Secure Container Configurations](./labs/02-secure-configs/)
+<a id="lab-02-secure-container-configurations"></a>
+#### [Lab 02: Secure Container Configurations](./labs/02-secure-configs/)
 
-**What You'll Learn:**
-- Compare insecure vs secure container configurations
-- Understand and apply Linux capabilities
-- Implement read-only filesystems
-- Use tmpfs for required write operations
-- Apply security options like no-new-privileges
+Compare insecure and hardened configurations using capability controls, read-only filesystems, `tmpfs`, non-root execution, and `no-new-privileges`.
 
-**Key Concepts:**
-- Linux capability system
-- Read-only root filesystems
-- Capability dropping (drop all, add specific)
-- tmpfs mounts with noexec and nosuid
-- Container hardening without breaking functionality
+**Estimated time:** 45–60 minutes
 
-**Time:** 45-60 minutes
+<a id="lab-03-least-privilege-containers"></a>
+<a id="lab-03-vulnerability-scanning-pipeline"></a>
+#### [Lab 03: Vulnerability Scanning Pipeline](./labs/03-vulnerability-scanning/)
 
----
+Scan images with Trivy, generate SBOMs with Syft, analyze them with Grype, and enforce vulnerability policy with OPA.
 
-### [Lab 03: Least Privilege Containers](./labs/03-vulnerability-scanning/)
+**Estimated time:** 60–90 minutes
 
-**What You'll Learn:**
-- Run containers as non-root users
-- Drop unnecessary Linux capabilities
-- Implement read-only filesystems
-- Configure security contexts
+<a id="lab-04-image-signing-and-verification"></a>
+#### [Lab 04: Image Signing and Verification](./labs/04-image-signing/)
 
-**Key Concepts:**
-- User namespace remapping
-- Capability dropping
-- Resource constraints
-- Security policies
+Sign and verify images with Cosign, examine content trust, manage signing keys, and enforce image-signing policy.
 
-**Time:** 30-45 minutes
+**Estimated time:** 45–60 minutes
 
----
+<a id="lab-05-network-security-basics"></a>
+<a id="lab-05-custom-seccomp-profiles"></a>
+#### [Lab 05: Custom Seccomp Profiles](./labs/05-seccomp-profiles/)
 
-### [Lab 04: Image Signing and Verification](./labs/04-image-signing/)
+Understand Linux syscalls, examine Docker's default seccomp behavior, generate restrictive profiles, and validate them without breaking workloads.
 
-**What You'll Learn:**
-- Sign container images with Cosign
-- Verify image signatures before deployment
-- Implement Docker Content Trust
-- Enforce signing policies
-- Manage signing keys securely
+**Estimated time:** 90–120 minutes
 
-**Key Concepts:**
-- Digital signatures and cryptographic verification
-- Cosign and Sigstore project
-- Docker Content Trust (DCT)
-- Keyless signing with OIDC
-- Supply chain attack prevention
-- Policy enforcement for signed images
+<a id="lab-06-ai-model-security"></a>
+#### [Lab 06: AI Model Security](./labs/06-ai-model-security/)
 
-**Time:** 45-60 minutes
+Harden containerized ML inference with resource controls, input validation, monitoring, and Kubernetes security settings.
 
----
+**Estimated time:** 60–90 minutes
 
-### [Lab 05: Network Security Basics](./labs/05-network-security/)
+<a id="level-2-advanced-security-labs-07-08"></a>
+### Level 2: Supply Chain and Network Security (Labs 07–08)
 
-**What You'll Learn:**
-- Configure secure Docker networks
-- Implement network policies
-- Use service mesh patterns
-- Secure inter-container communication
-
-**Key Concepts:**
-- Custom bridge networks
-- Network segmentation
-- Encrypted communication
-- Traffic control
-
-**Time:** 30-45 minutes
-
----
-
-### [Lab 06: AI Model Security](./labs/06-ai-model-security/)
-
-**What You'll Learn:**
-- Secure containerized machine learning workloads
-- Set appropriate resource limits for ML containers
-- Implement input validation and rate limiting
-- Protect model intellectual property
-- Monitor ML container behavior
-- Deploy ML models securely in production
-
-**Key Concepts:**
-- Resource management for ML workloads
-- Model extraction and adversarial attacks
-- API authentication and authorization
-- Input validation for ML endpoints
-- Model encryption and access control
-- Monitoring and anomaly detection for ML services
-
-**Time:** 60-90 minutes
-
----
-
-### Level 2: Advanced Security (Labs 07-08)
-
-Advanced labs covering supply chain security and comprehensive network security.
-
----
-
-### [Lab 07: Supply Chain Security with SBOM](./labs/07-supply-chain-sbom/)
-
-**What You'll Learn:**
-- Generate Software Bill of Materials (SBOM) using Syft
-- Scan SBOMs for vulnerabilities with Grype
-- Compare SBOM versions to track changes
-- Integrate SBOM generation into CI/CD pipelines
-- Meet compliance requirements (Executive Order 14028)
-
-**Key Concepts:**
-- SBOM formats (SPDX, CycloneDX, Syft JSON)
-- Supply chain transparency
-- Vulnerability management
-- Dependency tracking
-- CVE detection and remediation
-- CI/CD security automation
-
-**Key Tools:**
-- **Syft**: SBOM generation
-- **Grype**: Vulnerability scanning
-- **Azure DevOps** and **GitHub Actions**: CI/CD integration
-
-**Time:** 45-60 minutes
-
-**Why This Matters:**
-- Required for US federal software (EO 14028)
-- Enables rapid response to vulnerabilities (e.g., Log4Shell)
-- Provides complete software inventory
-- Supports compliance audits (PCI DSS, SOC 2)
-
----
-
-### [Lab 08: Docker Network Security (5 Scenarios)](./labs/08-network-security/)
-
-**What You'll Learn:**
-- Implement network isolation between containers
-- Design multi-tier segmented architectures
-- Use internal networks for complete database isolation
-- Configure TLS encryption for container-to-container communication
-- Identify and fix 8 common network misconfigurations
-
-**5 Interactive Scenarios:**
-
-**Scenario 1: Network Isolation** (3-4 minutes)
-- Create isolated networks with DNS resolution
-- Implement gateway containers spanning multiple networks
-- Understand network boundaries
-
-**Scenario 2: Multi-Tier Segmentation** (4-5 minutes)
-- Design 3-tier architecture (web/app/database)
-- Force traffic through monitored gateways
-- Prevent direct web-to-database access
+<a id="lab-07-supply-chain-security-with-sbom"></a>
+#### [Lab 07: Supply Chain Security with SBOM](./labs/07-supply-chain-sbom/)
 
-**Scenario 3: Internal Networks** (3-4 minutes)
-- Use internal networks with no external gateway
-- Achieve complete database isolation
-- Meet PCI DSS and HIPAA requirements
+Generate and compare SBOMs, scan them for vulnerabilities, and integrate supply-chain checks into GitHub Actions and Azure Pipelines.
 
-**Scenario 4: TLS Encryption** (4-5 minutes)
-- Generate self-signed certificates
-- Configure nginx with TLS
-- Implement encrypted container communication
-- Understand TLS performance implications
+**Estimated time:** 45–60 minutes
 
-**Scenario 5: Common Misconfigurations** (3-4 minutes)
-- Learn 8 common network security mistakes:
-  1. Using default bridge network (no DNS)
-  2. Using `--network host` (bypasses security)
-  3. Exposing unnecessary ports (databases)
-  4. No resource limits (DoS risk)
-  5. Running as root
-  6. Using `--privileged` mode
-  7. Flat network architecture
-  8. No health checks
-
-**Key Concepts:**
-- Defense in depth
-- Network segmentation
-- Zero-trust architecture
-- TLS/mTLS implementation
-- Resource management
-- Security misconfiguration prevention
-
-**Time:** 18-22 minutes (all scenarios) or 3-5 minutes each
-
-**Why This Matters:**
-- Prevents lateral movement during breaches
-- Meets compliance requirements
-- Protects sensitive data in transit
-- Enables zero-trust architectures
-- Real-world production patterns
-
----
-
-### Level 3: Red Team / Offensive Security (Lab 09)
-
-Hands-on container escape scenarios — understanding how attackers break out of containers.
-
----
-
-### [Lab 09: Docker Runtime Escape (5 Scenarios)](./labs/09-runtime-escape/)
-
-**What You'll Learn:**
-- Execute 5 real container escape techniques in a controlled environment
-- Understand why blocking docker.sock alone is not sufficient
-- Implement runtime detection with Falco and admission control with Kyverno
-- Audit containers for dangerous configurations that standard scans miss
-
-**5 Escape Scenarios:**
-
-**Scenario 1: Docker Socket Escape** (25 min)
-- Mount docker.sock → install Docker CLI → create privileged container → mount host / → chroot to host root
-- The most common escape in production (Jenkins, Portainer, DinD, Watchtower)
-
-**Scenario 2: Privileged Container Escape** (15 min)
-- 5 demonstrations: capability comparison, host filesystem via block device, network namespace escape, cgroup release_agent (Felix Wilhelm technique), detection
-- `--privileged` disables every security boundary simultaneously
-
-**Scenario 3: CAP_SYS_ADMIN Abuse** (20 min)
-- Single capability that enables 30+ system operations including mount and namespace manipulation
-- Passes standard security audits (`Privileged: false`) while providing near-privileged access
-
-**Scenario 4: Host Path Mount Abuse** (15 min)
-- `/etc` bind mount reads credentials directly; docker.sock escalation chain (two containers cooperating)
-- Risk-classified audit: CRITICAL (docker.sock), HIGH (/etc), MEDIUM (system paths)
-
-**Scenario 5: /proc and /sys Exposure** (15 min)
-- Reconnaissance: kernel version → CVE targeting, network data → lateral movement, process list → service discovery
-- Read-only mounts prevent writes but not information disclosure
-
-**Key Concepts:**
-- Container isolation boundaries and how each is broken
-- The audit gap: what scanners check vs what attackers exploit
-- Defense-in-depth: Falco rules, Kyverno admission policies, audit scripts
-- Docker Desktop vs Linux host behavioral differences
-
-**Defense Artifacts Generated:**
-- Falco runtime detection rules (Scenarios 3, 4, 5)
-- Kyverno admission policies (Scenarios 4, 5)
-- Audit scripts with risk classification (Scenarios 2, 3, 4, 5)
-
-**Time:** 2-2.5 hours (all scenarios) or 15-25 minutes each
-
-**Why This Matters:**
-- Blocking docker.sock and --privileged is necessary but not sufficient
-- CAP_SYS_ADMIN, host mounts, and /proc are the blind spots attackers use next
-- Runtime detection rules generated here are production-ready
-
----
-
-### Level 4: Production Security (Lab 10-11)
-
-Advanced production security patterns for secret management.
-
----
-
-### [Lab 10: Docker Secrets Management (5 Scenarios)](./labs/10-secrets-management/)
-
-**What You'll Learn:**
-- Identify 5 common secret leakage patterns in Docker environments
-- Implement Docker Swarm native secrets with encrypted storage
-- Integrate HashiCorp Vault for centralized secret management
-- Use BuildKit secret mounts for build-time credentials
-- Scan repositories for leaked secrets with automated tools
-- Prevent secret commits using pre-commit hooks and CI/CD integration
-
-**Key Concepts:**
-- Anti-patterns: hardcoded secrets, ENV vars, build args, git history leaks
-- Docker Swarm secrets: encrypted at rest, in-memory tmpfs mounts
-- External secret management: Vault dev mode and production patterns
-- BuildKit secret mounts: build-time secrets that never persist
-- Secret scanning: GitLeaks, pre-commit hooks, CI/CD integration
-
-**5 Interactive Scenarios:**
-
-**Scenario 1: Anti-Patterns** (15 min)
-- Demonstrate 5 ways secrets leak in Docker containers
-- Hardcoded secrets visible in `docker history`
-- Environment variables exposed in `docker inspect`
-- Build arguments persisting in image layers
-- Mounted files with wrong permissions (world-readable)
-- Git history leaks (permanent even after deletion)
-
-**Scenario 2: Docker Swarm Secrets** (20 min)
-- Create and manage secrets via Swarm CLI
-- Deploy services with secret mounts at `/run/secrets/`
-- Verify secrets NOT visible in `docker inspect` (metadata only)
-- Understand encrypted storage and tmpfs security properties
-- Compare with anti-patterns (ENV vars vs Swarm secrets)
-
-**Scenario 3: HashiCorp Vault Integration** (25 min)
-- Run Vault in dev mode (containerized, macOS compatible)
-- Store and retrieve secrets via CLI and HTTP API
-- Integrate applications with Vault at runtime
-- Understand centralized secret management
-- Compare Vault vs Swarm secrets (environment flexibility)
-
-**Scenario 4: BuildKit Secret Mounts** (15 min)
-- Pass secrets to builds without ARG leakage
-- Access private npm/pip registries during build
-- Use SSH keys for private git repos during build
-- Implement multi-stage builds with secret isolation
-- Verify secrets don't persist in final image or history
-
-**Scenario 5: Secret Scanning** (15 min)
-- Scan repositories for leaked secrets with GitLeaks
-- Detect secrets in git history (even after deletion)
-- Set up pre-commit hooks to prevent secret commits
-- Integrate secret scanning in CI/CD pipelines (GitHub Actions, Azure DevOps)
-- Create custom detection rules for company-specific secrets
-
-**Time:** 90 minutes (all scenarios) or 15-25 minutes each
-
-**Why This Matters:**
-- Secrets in git are permanent (even after deletion)
-- Environment variables leak through docker inspect and logs
-- BuildKit secrets enable secure builds without image pollution
-- Automated scanning prevents accidental commits
-- Multi-layered approach (Swarm + Vault + scanning) for production
-
-### [Lab 11: Docker MCP Gateway for AI-Powered Container Remediation](./labs/11-docker-mcp-gateway/)
-
-**What You'll Learn:**
-- Build an AI-powered Docker container management system using Model Context Protocol (MCP)
-- Integrate AutoGen multi-agent framework with GPT-4 for decision-making
-- Implement automated container failure detection and remediation
-- Create production-grade security pipelines (HMAC auth, rate limiting, audit logging)
-- Design intelligent escalation policies (auto-fix vs human intervention)
-
-**Key Concepts:**
-- Model Context Protocol (MCP) - standardized tool interface for AI agents
-- AutoGen framework - multi-agent conversation and tool execution
-- Docker API integration - logs, restart, resource updates
-- AI decision-making - context-aware remediation vs escalation
-- Security pipeline - authentication, rate limiting, input validation, audit trail
-- Production patterns - read-only filesystems, non-root users, health checks
-
-**4 Interactive Scenarios:**
-
-**Scenario 1: OOMKilled Auto-Remediation** (5 min)
-- Container killed due to out-of-memory
-- Agent detects OOMKilled (exit code 137)
-- Agent increases memory limit by 50-100%
-- Validates: Smart resource scaling based on failure analysis
-
-**Scenario 2: CrashLoopBackOff Escalation** (5 min)
-- Container crashes immediately on startup (config/code bug)
-- Agent recognizes: Restart won't fix it
-- Agent escalates to human with log details
-- Validates: Conservative decision-making for complex issues
-
-**Scenario 3: Exit Code Analysis** (5 min)
-- Container exits with error (database connection failed)
-- Agent attempts restart (reasonable for network errors)
-- Container still exits → Agent escalates
-- Validates: Smart retry logic with escalation fallback
-
-**Scenario 4: Health Check Failure** (5 min)
-- Container running but failing health checks (app deadlock)
-- Agent restarts unhealthy container
-- Validates: Auto-recovery for stuck/deadlocked applications
-
-**Architecture:**
-```
-Docker Failure → AutoGen Agent (GPT-4) → MCP Server (Security Pipeline) → Docker API
-                                              ↓
-                                     HMAC Auth → Rate Limit → Validate → Audit
-```
-
-**Technologies:**
-- **AutoGen** (pyautogen 0.1.14) - Multi-agent framework
-- **OpenAI GPT-4** - Decision-making and reasoning
-- **Model Context Protocol (MCP)** - Standardized tool interface
-- **Docker API** - Container management (logs, restart, update)
-- **Redis** - Rate limiting (100 req/hour per agent)
-- **Flask** - MCP server implementation
-
-**Security Features:**
-- HMAC signature authentication
-- Redis-backed rate limiting
-- Input validation (injection protection)
-- Complete audit trail (JSON logging)
-- Multi-stage Docker builds
-- Non-root execution (UID 1000)
-- Read-only filesystems with tmpfs
-- Capability dropping
-- Resource limits
-
-**Time:** 60-90 minutes (setup + 4 scenarios)
-
-**Why This Matters:**
-- Reduces on-call burden by automating common container failures
-- Demonstrates AI-powered infrastructure automation
-- Implements production-grade security patterns
-- Shows when to auto-remediate vs escalate to humans
-- First Docker MCP Gateway implementation in open source
-
-**Prerequisites:**
-- Docker Desktop or Docker Engine
-- OpenAI API key (GPT-4 access)
-- 8GB RAM minimum
-- Understanding of Docker API basics
-
-**What You'll Build:**
-- MCP server with 3 Docker tools (logs, restart, resource update)
-- AutoGen AI agent with context-aware decision-making
-- Security pipeline with authentication and rate limiting
-- Complete audit trail system
-- 4 production-ready test scenarios
-
----
-
-### Level 5: Trust Governance (Lab 12)
-
-### [Lab 12: Docker Hardened Images as a Container Trust Control Plane](./labs/12-docker-hardened-images/)
-
-**What You'll Learn:**
-- Build a complete container trust control plane on top of Docker Hardened Images
-- Enforce vendor-neutral admission policies with Kyverno (registry, signature, SBOM)
-- Implement keyless cosign signing in GitHub Actions with verifiable supply chain attestations
-- Operate distroless containers in production with three documented debug patterns
-- Run a 12-service synthetic fleet audit demonstrating drift observation at scale
-- Apply the substitution test: prove the architecture works with Chainguard, self-built distroless, or any signing primitive
-
-**Key Concepts:**
-- Three-layer model: Supply Chain → Trust → Enforcement, joined by an observable control loop
-- Vendor-neutral policy primitives — policies enforce "trusted registry," not "DHI specifically"
-- Phased rollout: Enforce mode for registry origin, Audit mode for signature/SBOM during migration
-- Break-glass exception pattern via Kyverno PolicyException with namespace-label gates
-- Keyless cosign signing using GitHub OIDC (no private keys to manage, rotate, or leak)
-- DHI substitution test: same architecture works with any hardened image foundation
-
-**5 Hypothesis-Driven Experiments (H/E/O/C format):**
-
-**E1: Drift Observation** (15 min)
-- 12-service synthetic fleet with explicit variation matrix (origin × signing × patch age)
-- `audit-fleet.sh` produces risk-graded inventory (CRITICAL/HIGH/MEDIUM/LOW/OK)
-- `analyze-drift.py` 7-section deep analysis report
-- Headline finding: unsigned services average 130× more critical CVEs than signed_verified
-- Validates: Image-level controls collapse without fleet-wide enforcement
-
-**E2: Trust Provenance Verification** (10 min)
-- `verify-image.sh` validates four trust signals on real DHI images
-- Attestation discovery → CycloneDX SBOM → SLSA provenance v0.2 → OpenVEX
-- Uses `docker scout attest get --verify --skip-tlog` with cosign-equivalent verification
-- Demonstrates: DHI signatures live at `registry.scout.docker.com/docker/dhi-*`, not conventional location
-- Validates: Image trust requires four signals, not one
-
-**E3: Admission Enforcement** (15 min)
-- Vendor-neutral Kyverno policies: trusted-registry (Enforce), signature (Audit), SBOM (Audit)
-- Break-glass exception via PolicyException with `trust.governance.io/break-glass-approved` label
-- Three demonstrated patterns: strict enforcement, phased Audit rollout, audited bypass
-- Empirical result: Kubernetes admission webhook rejects nginx, admits dhi.io/python, allows break-glass
-- Validates: Build-time security collapses if runtime admission lacks teeth
-
-**E4: Supply Chain Gates** (workflow runs ~5 min on push)
-- GitHub Actions workflow with keyless cosign signing via GitHub OIDC
-- 18-step pipeline: build → push → sign → SBOM attest → vuln scan attest → verify
-- Image pushed to ghcr.io with three cryptographic attestations, verifiable by anyone
-- Companion: `generate-sbom-delta.sh` computes package delta vs DHI base
-- Validates: Without build-time gates, runtime enforcement absorbs failures
-
-**E5: Runtime Failure Modes** (documentation + walkthroughs)
-- Answers the "no shell at 2 AM" operational objection to distroless
-- Three patterns: ephemeral debug containers, dev-variant pattern, debug sidecar
-- Three runbook scenarios: unreachable service, crashloop, OOM kill
-- `restrict-dev-variants` policy: `-dev` variants admitted only in `environment=dev` namespaces
-- Validates: Distroless is operationally viable with patterns that preserve the trust contract
-
-**Architecture:**
-```
-                              The Control Loop
-              ┌──────────────────────────────────────────────┐
-              ▼                                              │
-    ┌─────────────────┐    ┌─────────────────┐    ┌──────────┴────────┐
-    │   Supply Chain  │───▶│      Trust      │───▶│    Enforcement    │
-    │      Layer      │    │      Layer      │    │       Layer       │
-    │     (E4)        │    │     (E2)        │    │       (E3)        │
-    └─────────────────┘    └─────────────────┘    └─────────┬─────────┘
-              ▲                                              │
-              │       Operations: drift (E1), failure modes (E5)
-              └──────────────────────────────────────────────┘
-```
-
-**Technologies:**
-- **Docker Hardened Images (DHI)** — hardened base images with signed SBOM + SLSA + VEX attestations
-- **Kyverno 3.3.4** — Kubernetes-native policy engine for admission control
-- **Cosign 2.4.1** — signature and attestation tooling (keyless via Sigstore)
-- **Syft + Grype** — CycloneDX SBOM generation and vulnerability scanning
-- **kind 0.31.0** — local Kubernetes for the lab environment
-- **GitHub Actions** — CI/CD with keyless OIDC signing
-
-**Trust Contract Enforced:**
-Any pod admitted to the cluster must satisfy four conditions:
-1. **Origin** — image from allow-listed registry
-2. **Signature** — image has valid cosign signature
-3. **Provenance** — image has verifiable CycloneDX SBOM attestation
-4. **Vulnerability scan** — image has signed vulnerability scan attestation
-
-**Time:** 90–120 minutes (setup + 5 experiments)
-
-**Why This Matters:**
-- Container security failures in regulated environments are governance failures, not image failures
-- Demonstrates the architectural pattern that turns hardened images into security outcomes
-- Vendor-neutral framing: the same patterns work with Chainguard, self-built distroless, or other primitives
-- Includes a substantive [troubleshooting log](./labs/12-docker-hardened-images/docs/troubleshooting.md) documenting real friction points encountered during the build
-- Production-grade: includes phased migration playbook, compliance mapping (PCI-DSS 4.0 §6.3, 21 CFR Part 11), and break-glass patterns
-
-**Prerequisites:**
-- Docker Desktop with at least 4 CPU / 6 GB RAM
-- `docker login dhi.io` (free tier suffices)
-- Tools: `kind`, `kubectl`, `helm`, `jq`, `cosign`, `syft` (install via `brew install`)
-- GitHub repository for E4 (or skip E4's pipeline run; the YAML is the artifact)
-
----
-
-
-## 🚀 Getting Started
+<a id="lab-08-docker-network-security-5-scenarios"></a>
+#### [Lab 08: Docker Network Security — 5 Scenarios](./labs/08-network-security/)
 
+Practice network isolation, multi-tier segmentation, internal networks, TLS encryption, and common network-misconfiguration remediation.
+
+**Estimated time:** 18–22 minutes
+
+<a id="level-3-red-team--offensive-security-lab-09"></a>
+### Level 3: Runtime Escape and Defense (Lab 09)
+
+<a id="lab-09-docker-runtime-escape-5-scenarios"></a>
+#### [Lab 09: Docker Runtime Escape — 5 Scenarios](./labs/09-runtime-escape/)
+
+Explore Docker socket escape, privileged containers, `CAP_SYS_ADMIN`, host mounts, and `/proc` or `/sys` exposure, then apply Falco, Kyverno, and audit-script defenses.
+
+> Run offensive scenarios only in an isolated disposable environment. Do not use a production host.
+
+**Estimated time:** 2–2.5 hours
+
+<a id="level-4-production-security-lab-10-11"></a>
+### Level 4: Production Security and Controlled Remediation (Labs 10–11)
+
+<a id="lab-10-docker-secrets-management-5-scenarios"></a>
+<a id="lab-10-docker-secrets-management-6-scenarios"></a>
+#### [Lab 10: Docker Secrets Management — 6 Scenarios](./labs/10-secrets-management/)
+
+Study secret leakage anti-patterns, Docker Swarm secrets, Vault integration, BuildKit secret mounts, repository scanning, and audit/compliance evidence.
+
+**Scenarios:**
+
+1. Secret-management anti-patterns
+2. Docker Swarm secrets
+3. HashiCorp Vault integration
+4. BuildKit secrets
+5. Secret scanning
+6. Audit and compliance
+
+**Estimated time:** approximately 90 minutes
+
+<a id="lab-11-docker-mcp-gateway-for-ai-powered-container-remediation"></a>
+#### [Lab 11: Docker MCP Gateway for AI-Powered Container Remediation](./labs/11-docker-mcp-gateway/)
+
+Build an AutoGen-based agent that uses GPT-3.5-turbo and a secured MCP server to inspect logs, restart containers, update resources, and escalate unsafe or uncertain remediation decisions.
+
+The security pipeline includes HMAC authentication, Redis-backed rate limiting, input validation, audit logging, non-root execution, read-only filesystems, dropped capabilities, and resource limits.
+
+**Scenarios:** OOM remediation, crash escalation, exit-code retry logic, and health-check recovery.
+
+**Estimated time:** 60–90 minutes
+
+<a id="level-5-trust-governance-lab-12"></a>
+### Level 5: Container Trust Governance (Lab 12)
+
+<a id="lab-12-docker-hardened-images-as-a-container-trust-control-plane"></a>
+#### [Lab 12: Docker Hardened Images as a Container Trust Control Plane](./labs/12-docker-hardened-images/)
+
+Build a vendor-neutral trust-control architecture using hardened images, Kyverno admission policies, Cosign, SBOM and provenance attestations, phased enforcement, break-glass controls, and fleet drift analysis.
+
+**Experiments:**
+
+1. Drift observation
+2. Trust and provenance verification
+3. Admission enforcement
+4. Supply-chain gates
+5. Runtime failure modes
+
+**Estimated time:** 90–120 minutes
+
+### Level 6: AI Context Security (Lab 13)
+
+#### [Lab 13: AI Context Poisoning Detection and Defense](./labs/13-ai-context-poisoning/)
+
+Test zero-width Unicode instruction injection and malicious agent hooks against controlled projects, compare Claude Code and Gemini CLI behavior, and validate Docker Sandboxes as an infrastructure-level defense.
+
+The lab documents two independent defenses:
+
+- Agent-layer detection and refusal
+- Sandbox-level filesystem isolation
+
+**Estimated time:** follow the lab README; execution time varies by agent and sandbox environment
+
+<a id="getting-started"></a>
+## Getting Started
+
+<a id="prerequisites"></a>
 ### Prerequisites
 
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-- Linux, macOS, or Windows with WSL2
-- Basic Docker knowledge
-- Terminal/command line familiarity
+Common requirements:
 
+- Docker Engine or Docker Desktop
+- Docker Compose v2
+- Linux, macOS, or Windows with WSL2
+- Basic Docker and command-line knowledge
+
+Some advanced labs additionally require tools such as `kubectl`, `kind`, `helm`, `cosign`, `syft`, `grype`, `jq`, Python, an OpenAI API key, or Docker Sandboxes. Always check the selected lab's README before starting.
+
+<a id="quick-start"></a>
 ### Quick Start
 
-1. **Clone the repository:**
 ```bash
 git clone https://github.com/opscart/docker-security-practical-guide.git
 cd docker-security-practical-guide
-```
 
-2. **Start with Lab 01:**
-```bash
 cd labs/01-docker-bench-security
+cat README.md
 ./run-audit.sh
 ```
 
-3. **Follow along with the README in each lab directory**
+<a id="how-to-use-this-guide"></a>
+## How to Use This Guide
 
-## 📖 How to Use This Guide
-
+<a id="for-beginners"></a>
 ### For Beginners
 
-1. Start with Lab 01 to understand security auditing
-2. Progress sequentially through Level 1 (Labs 01-06)
-3. Complete all exercises before moving forward
-4. Review the "Common Issues" sections
-5. Move to Level 2 (Labs 07-08) for advanced topics
+Start with Labs 01–06, then continue according to your goals. Each lab remains self-contained, so you can pause or skip topics that are not relevant to your environment.
 
+<a id="for-experienced-users"></a>
 ### For Experienced Users
 
-1. Jump to specific labs based on your needs
-2. Use as a reference for security patterns
-3. Adapt examples to your use cases
-4. Focus on Level 2 labs for advanced techniques
-5. Contribute improvements via pull requests
+Select labs by threat model:
 
+- Labs 03, 04, 07, and 12 for vulnerability and supply-chain controls
+- Labs 05, 08, and 09 for runtime and isolation controls
+- Lab 10 for secrets management
+- Labs 06, 11, and 13 for AI-related container security
+
+<a id="for-security-auditors"></a>
 ### For Security Auditors
 
-1. Use Lab 01 for baseline security assessments
-2. Reference CIS Benchmark mappings
-3. Lab 07 for supply chain compliance
-4. Lab 08 for network architecture reviews
-5. Adapt checklists for your compliance needs
-6. Document findings using provided templates
+Use Lab 01 for baseline checks, Labs 03 and 07 for vulnerability and SBOM evidence, Lab 09 for runtime-risk review, Lab 10 for secrets evidence, and Lab 12 for admission and trust-governance controls.
 
-### For DevOps/Platform Engineers
+<a id="for-devopsplatform-engineers"></a>
+### For DevOps and Platform Engineers
 
-1. Lab 07 for CI/CD security integration
-2. Lab 08 for production network architecture
-3. Use automation scripts in your pipelines
-4. Implement security best practices from all labs
+Focus on reusable scripts, CI/CD examples, policies, runtime controls, and migration patterns. Adapt them to your platform only after reviewing each lab's assumptions and safety notes.
 
-## 🔧 Lab Setup
+<a id="lab-setup"></a>
+## Lab Setup
 
-Each lab is self-contained and includes:
+Each lab is self-contained and may include:
 
-- `README.md`: Comprehensive guide with theory and practice
-- `docker-compose.yml`: Ready-to-run configurations
-- Scripts: Automation for common tasks
-- Examples: Both vulnerable and secure configurations
-- CI/CD configs: Azure DevOps and GitHub Actions (Labs 07-08)
+- A lab-specific `README.md`
+- Setup, execution, validation, and cleanup scripts
+- Dockerfiles or Docker Compose configurations
+- Kubernetes manifests and policy definitions
+- Vulnerable and hardened examples
+- Captured experiment evidence
+- CI/CD configurations where relevant
 
+<a id="running-a-lab"></a>
 ### Running a Lab
 
 ```bash
-# Navigate to lab directory
 cd labs/XX-lab-name
-
-# Review the README
 cat README.md
 
-# Run the lab exercise
-./run-demo.sh  # or specific lab script
-
-# Clean up
-./cleanup.sh
+# Run only the commands documented by that lab.
+# Cleanup commands also vary by lab.
 ```
 
-## 🎓 Learning Path
+<a id="learning-path"></a>
+## Learning Path
 
-### Level 1: Fundamentals
-```
-Lab 01: Security Auditing (CIS Benchmark)
-    ↓
-Lab 02: Secure Configurations (Capabilities, Read-only FS)
-    ↓
-Lab 03: Least Privilege (Non-root, Resource Limits)
-    ↓
-Lab 04: Image Signing (Cosign, Content Trust)
-    ↓
-Lab 05: Network Security Basics (Custom Networks)
-    ↓
-Lab 06: AI/ML Security (Model Protection)
-```
-
-### Level 2: Advanced
-```
-Lab 07: Supply Chain Security
-         (SBOM, Vulnerability Scanning)
-    ↓
-Lab 08: Network Security
-         (5 Scenarios: Isolation to Encryption)
+```text
+Foundations
+Labs 01–06
+    |
+    +--> Supply chain and network security: Labs 07–08
+    |
+    +--> Runtime escape and defense: Lab 09
+    |
+    +--> Production security and remediation: Labs 10–11
+    |
+    +--> Container trust governance: Lab 12
+    |
+    +--> AI context security: Lab 13
 ```
 
-### Level 3: Red Team
-```
-Lab 09: Runtime Escape
-         (5 Scenarios: Socket to /proc)
-```
+**Estimated total:** approximately 14–17 hours, excluding optional extensions, environment setup, repeated experiments, and agent-dependent Lab 13 testing.
 
-### Level 4: Production Security
-```
-Lab 10: Secret Managment
-Lab 11: Docker MCP Gateway for AI-Powered Container Remediation
-```
+<a id="tools--technologies"></a>
+## Tools and Technologies
 
-### Level 5: Trust Governance (Lab 12)
-```
-Lab 12: Docker Hardened Images as a Container Trust Control Plane
-    **5 Hypothesis-Driven Experiments (H/E/O/C format):**
-        **E1: Drift Observation** 
-        *E2: Trust Provenance Verification**
-        *E3: Admission Enforcement**
-        **E4: Supply Chain Gates**
-        **E5: Runtime Failure Modes**
-```
-
-**Estimated Time:** 
-- Level 1 (Labs 01-06): 4-6 hours
-- Level 2 (Labs 07-08): 2-3 hours
-- Level 3 (Lab 09): 2-2.5 hours
-- Level 4 (Lab 10-11): 2-2.5 hours
-- Level 5 (Lab 12):1.5-2 hours
-- Complete guide: 11.5-13 hours
-- With practice exercises: 15-19 hours
-
-
-## 🛠️ Tools & Technologies
-
+<a id="security-tools-used"></a>
 ### Security Tools Used
 
-**Level 1:**
-- **Docker Bench Security**: CIS compliance auditing
-- **Trivy**: Vulnerability scanning
-- **Cosign**: Container signing
-- **Anchore**: Image analysis
-- **Notary**: Content trust
+Docker Bench Security, Trivy, Syft, Grype, Cosign, OPA, Kyverno, Falco, Vault, GitLeaks, OpenSSL, Docker Scout, kind, Kubernetes, Redis, Flask, AutoGen, Claude Code, Gemini CLI, and Docker Sandboxes.
 
-**Level 2:**
-- **Syft**: SBOM generation (Lab 07)
-- **Grype**: Vulnerability scanning (Lab 07)
-- **OpenSSL**: Certificate generation (Lab 08)
-- **nginx**: TLS configuration (Lab 08)
-
+<a id="technologies-covered"></a>
 ### Technologies Covered
 
-- Docker Engine & Docker Compose
-- Linux Security Modules (AppArmor, SELinux)
-- Seccomp profiles
-- User namespaces
-- Capability systems
-- Docker networking (bridge, internal, overlay)
-- TLS/mTLS encryption
-- CI/CD integration (Azure DevOps, GitHub Actions)
+Docker Engine, Docker Compose, Linux capabilities, seccomp, user namespaces, read-only filesystems, Docker networking, TLS, CI/CD security gates, SBOMs, provenance, admission control, secrets management, AI tool isolation, and context-poisoning defense.
 
-## 📝 Best Practices Summary
+<a id="best-practices-summary"></a>
+## Best-Practices Summary
 
-### Image Security
-- Use minimal base images (alpine, distroless)
-- Scan for vulnerabilities regularly
-- Generate and maintain SBOMs (Lab 07)
-- Sign and verify images (Lab 04)
-- Use specific tags, never `latest`
-- Implement multi-stage builds
+<a id="image-security"></a>
+### Image and Supply-Chain Security
 
+- Use minimal, maintained base images
+- Pin versions or digests where reproducibility matters
+- Scan images and generate SBOMs
+- Sign and verify release images
+- Enforce trusted origin, signature, provenance, and vulnerability policy
+- Maintain break-glass procedures with auditability
+
+<a id="runtime-security"></a>
 ### Runtime Security
-- Run as non-root user (Lab 03)
-- Drop unnecessary capabilities (Lab 02)
-- Use read-only filesystems (Lab 02)
-- Enable security profiles
-- Set resource limits (Lab 08)
-- Implement health checks (Lab 08)
 
+- Run as a non-root user
+- Drop unnecessary capabilities
+- Use read-only filesystems and controlled writable mounts
+- Apply seccomp and other supported Linux Security Modules
+- Set CPU, memory, and PID limits
+- Never expose the Docker socket to untrusted workloads
+
+<a id="network-security"></a>
 ### Network Security
-- Use custom bridge networks (Lab 08)
-- Implement multi-tier segmentation (Lab 08)
-- Use internal networks for databases (Lab 08)
-- Avoid host network mode (Lab 08)
-- Encrypt traffic with TLS (Lab 08)
-- Control ingress/egress
 
-### Supply Chain Security (Lab 07)
-- Generate SBOMs for all images
-- Scan regularly for vulnerabilities
-- Track dependency changes
-- Automate in CI/CD pipelines
-- Meet compliance requirements
-- Respond quickly to CVEs
+- Use dedicated networks instead of the default bridge
+- Segment application tiers
+- Restrict unnecessary ingress and egress
+- Isolate sensitive services with internal networks
+- Encrypt service traffic when required
 
+<a id="supply-chain-security-lab-07"></a>
+### Vulnerability and SBOM Management
+
+- Generate SBOMs for release artifacts
+- Scan continuously rather than only once
+- Define severity and exception policy
+- Preserve evidence for audits and incident response
+- Track dependency and base-image changes
+
+<a id="secrets-management"></a>
 ### Secrets Management
-- Never hardcode credentials
-- Use Docker secrets or external vaults
-- Rotate secrets regularly
-- Limit secret access scope
-- Audit secret usage
 
+- Never commit production credentials
+- Avoid hardcoded secrets and build arguments
+- Prefer purpose-built secret stores or controlled secret mounts
+- Rotate and scope credentials
+- Scan repositories and audit access
+
+<a id="operational-security"></a>
 ### Operational Security
-- Regular security audits (Lab 01)
-- Keep Docker updated
-- Monitor container behavior
-- Log security events
-- Incident response plan
-- Track SBOM and vulnerability changes (Lab 07)
 
-## 🏗️ Architecture Patterns
+- Monitor runtime behavior
+- Record security-sensitive actions
+- Maintain tested cleanup and incident-response procedures
+- Separate automated remediation from high-risk actions
+- Require human approval where confidence or blast radius is unacceptable
 
-### Multi-Tier Segmentation (Lab 08)
-```
-┌──────────────┐       ┌──────────────┐       ┌─────────────────┐
-│  Public Net  │       │   App Net    │       │  Database Net   │
-│              │       │              │       │   (INTERNAL)    │
-│    [Web]     │◄─────►│    [App]     │◄─────►│      [DB]       │
-│   :8443      │  TLS  │              │       │   No Gateway    │
-└──────────────┘       └──────────────┘       └─────────────────┘
-     ▲
-     │
-  Internet
-```
+<a id="architecture-patterns"></a>
+## Architecture References
 
-### Supply Chain Security (Lab 07)
-```
-[Container] → [Syft] → [SBOM] → [Grype] → [Security Report]
-                ↓
-        [SPDX/CycloneDX/JSON]
-                ↓
-           [CVE Database]
-                ↓
-        [Critical/High/Medium/Low]
-```
+<a id="multi-tier-segmentation-lab-08"></a>
+### Network Segmentation
 
-## 🤝 Contributing
+See [Lab 08 architecture diagrams](./labs/08-network-security/docs/ARCHITECTURE_DIAGRAMS.md) for multi-tier segmentation and encrypted communication patterns.
 
-Contributions are welcome! Please:
+<a id="supply-chain-security-lab-07-1"></a>
+### Supply-Chain Trust
+
+See [Lab 12 architecture](./labs/12-docker-hardened-images/docs/architecture.md) for the Supply Chain → Trust → Enforcement control loop, and [Lab 07](./labs/07-supply-chain-sbom/) for SBOM workflows.
+
+<a id="contributing"></a>
+## Contributing
+
+Contributions are welcome:
 
 1. Fork the repository
-2. Create a feature branch
-3. Add your improvements
-4. Test thoroughly
+2. Create a focused branch
+3. Test the affected lab
+4. Update its documentation
 5. Submit a pull request
 
+<a id="contribution-ideas"></a>
 ### Contribution Ideas
 
-- Additional lab exercises
-- Security tool integrations
-- Cloud platform examples (AWS, Azure, GCP)
-- Kubernetes security labs
-- Advanced threat scenarios
-- Additional SBOM formats
-- More network security patterns
+- Additional defensive scenarios
+- Cloud-platform implementations
+- CI/CD and policy integrations
+- Compatibility testing on Linux, macOS, and Windows
+- Corrections, reproducibility improvements, and clearer validation
 
-## 📚 Additional Resources
+<a id="additional-resources"></a>
+## Additional Resources
 
-### Official Documentation
-- [Docker Security](https://docs.docker.com/engine/security/)
-- [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker)
-- [Docker Bench Security](https://github.com/docker/docker-bench-security)
-- [Syft (SBOM Generation)](https://github.com/anchore/syft)
-- [Grype (Vulnerability Scanning)](https://github.com/anchore/grype)
+Detailed external references are maintained in [docs/additional-resources.md](./docs/additional-resources.md).
 
-### Security Standards
-- [NIST Container Security](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-190.pdf)
-- [OWASP Docker Top 10](https://owasp.org/www-project-docker-top-10/)
-- [CIS Controls](https://www.cisecurity.org/controls)
-- [Executive Order 14028](https://www.whitehouse.gov/briefing-room/presidential-actions/2021/05/12/executive-order-on-improving-the-nations-cybersecurity/) - SBOM Requirements
+<a id="official-documentation"></a>
+<a id="security-standards"></a>
+<a id="sbom-resources-lab-07"></a>
+<a id="network-security-resources-lab-08"></a>
+<a id="community-resources"></a>
 
-### SBOM Resources (Lab 07)
-- [SPDX Specification](https://spdx.dev/)
-- [CycloneDX Standard](https://cyclonedx.org/)
-- [CISA SBOM Resources](https://www.cisa.gov/sbom)
-- [NTIA SBOM Minimum Elements](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom)
+<a id="troubleshooting"></a>
+## Troubleshooting
 
-### Network Security Resources (Lab 08)
-- [Docker Network Documentation](https://docs.docker.com/network/)
-- [Container Network Security](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
-- [TLS Best Practices](https://wiki.mozilla.org/Security/Server_Side_TLS)
+Start with [docs/troubleshooting.md](./docs/troubleshooting.md), then use the selected lab's README or lab-local troubleshooting guide.
 
-### Community Resources
-- [Docker Security Subreddit](https://reddit.com/r/docker)
-- [Docker Community Slack](https://dockercommunity.slack.com)
-- [Stack Overflow Docker Tag](https://stackoverflow.com/questions/tagged/docker)
-- [CNCF Slack](https://slack.cncf.io/)
+<a id="common-issues"></a>
+### Common Checks
 
-## 🐛 Troubleshooting
+```bash
+docker version
+docker compose version
+```
 
-### Common Issues
+For script permission errors:
 
-**Issue: Permission denied running scripts**
 ```bash
 chmod +x script-name.sh
 ```
 
-**Issue: Docker daemon not running**
-```bash
-sudo systemctl start docker
-```
+Do not use generic cleanup commands across all labs. Use the cleanup procedure documented by the selected lab.
 
-**Issue: Port already in use**
-```bash
-docker ps  # Check running containers
-docker-compose down  # Stop services
-lsof -i :PORT  # Find process using port
-```
+<a id="lab-completion-status"></a>
+## Lab Completion Checklist
 
-**Issue: Image pull failures**
-```bash
-docker login  # Authenticate if needed
-docker pull image-name  # Manual pull to test
-```
+- [ ] Lab 01: Security Auditing
+- [ ] Lab 02: Secure Configurations
+- [ ] Lab 03: Vulnerability Scanning Pipeline
+- [ ] Lab 04: Image Signing and Verification
+- [ ] Lab 05: Custom Seccomp Profiles
+- [ ] Lab 06: AI Model Security
+- [ ] Lab 07: Supply Chain Security with SBOM
+- [ ] Lab 08: Docker Network Security
+- [ ] Lab 09: Docker Runtime Escape
+- [ ] Lab 10: Docker Secrets Management
+- [ ] Lab 11: Docker MCP Gateway
+- [ ] Lab 12: Container Trust Control Plane
+- [ ] Lab 13: AI Context Poisoning Detection and Defense
 
-**Issue: Syft/Grype not found (Lab 07)**
-```bash
-# Install Syft
-curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+<a id="license"></a>
+## License
 
-# Install Grype
-curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-```
+MIT License. See [LICENSE](./LICENSE).
 
-**Issue: Certificate generation fails (Lab 08)**
-```bash
-# Ensure OpenSSL is installed
-openssl version
+<a id="acknowledgments"></a>
+## Acknowledgments
 
-# Check certificate generation script
-cd labs/08-network-security/certs
-chmod +x generate-certs.sh
-./generate-certs.sh
-```
+Thanks to the Docker, CIS, OWASP, Anchore, Sigstore, CNCF, and broader open-source security communities whose tools, standards, and documentation support these labs.
 
-**Issue: Network already exists (Lab 08)**
-```bash
-# Clean up all networks
-cd labs/08-network-security
-./cleanup.sh
-```
+<a id="contact--support"></a>
+## Contact and Support
 
-## 📊 Lab Completion Status
+- **Author:** Shamsher Khan
+- **GitHub:** [@opscart](https://github.com/opscart)
+- **Website:** [OpsCart](https://opscart.com)
+- **Issues:** [Report a problem or propose an improvement](https://github.com/opscart/docker-security-practical-guide/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/opscart/docker-security-practical-guide/discussions)
 
-Track your progress:
-
-- [ ] Lab 01: Security Auditing ⏱️ 30-45 min
-- [ ] Lab 02: Secure Configurations ⏱️ 45-60 min
-- [ ] Lab 03: Least Privilege ⏱️ 30-45 min
-- [ ] Lab 04: Image Signing ⏱️ 45-60 min
-- [ ] Lab 05: Network Security Basics ⏱️ 30-45 min
-- [ ] Lab 06: AI/ML Security ⏱️ 60-90 min
-- [ ] Lab 07: Supply Chain Security (SBOM) ⏱️ 45-60 min
-- [ ] Lab 08: Network Security (5 Scenarios) ⏱️ 18-22 min
-- [ ] Lab 09: Runtime Escape (5 Scenarios) ⏱️ 2-2.5 hrs
-- [ ] Lab 10: Secrets Management (5 Scenarios) ⏱️ 90 min
-- [ ] Lab 11: Docker MCP Gateway (AI-Powered Remediation) ⏱️ 60-90 min
-- [ ] Lab 12: Docker Hardened Images (5 Experments) ⏱️ 60-90 min
-
-**Total Time:** 12.5-15 hours
-
-## 📜 License
-
-MIT License - see [LICENSE](LICENSE) file for details
-
-## ✨ Acknowledgments
-
-- Docker team for security tools and documentation
-- CIS for the Docker Benchmark
-- OWASP for security guidelines
-- Anchore team for Syft and Grype (Lab 07)
-- Sigstore project for Cosign (Lab 04)
-- Open source security community
-- CNCF for cloud native security standards
-
-## 📧 Contact & Support
-
-- **Author**: Shamsher Khan
-- **GitHub**: [@opscart](https://github.com/opscart)
-- **Blog**: [@OpsCart](https://opscart.com)
-- **Issues**: [Report issues](https://github.com/opscart/docker-security-practical-guide/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/opscart/docker-security-practical-guide/discussions)
-
+<a id="professional-background"></a>
 ### Professional Background
+
 - Senior DevOps Engineer
 - IEEE Senior Member
-- 15+ years IT experience
-- 10+ years Cloud & DevOps specialization
-- Published author on DZone and technical publications
+- 15+ years of IT experience
+- 10+ years of cloud and DevOps specialization
+- Published technical author and CNCF contributor
 
-## 🌟 Star This Repository!
+<a id="star-this-repository"></a>
+## Support the Project
 
-If you find this guide helpful:
-1. ⭐ Star the repository
-2. 🔀 Fork for your own learning
-3. 📢 Share with your team
-4. 💬 Provide feedback
-5. 🤝 Contribute improvements
+Star the repository, share a lab with your team, report reproducibility issues, or contribute a focused improvement.
 
-
+<a id="stay-updated"></a>
 ### Stay Updated
 
-- Watch this repository for updates
-- Follow [@opscart](https://github.com/opscart) on GitHub
-- Join discussions in the Issues tab
-
----
-
-**🎯 From fundamentals to advanced patterns, this guide has everything you need to secure your Docker deployments in production.**
-
----
-
-**⭐ If you find this guide helpful, please star the repository!**
-
-**🔒 Remember: Security is a journey, not a destination. Keep learning, keep improving!**
+Watch the repository and follow [@opscart](https://github.com/opscart) for updates.
