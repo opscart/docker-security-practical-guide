@@ -3,6 +3,7 @@
 [![Last commit](https://img.shields.io/github/last-commit/opscart/docker-security-practical-guide)](https://github.com/opscart/docker-security-practical-guide/commits/master)
 [![Supply Chain Gate](https://github.com/opscart/docker-security-practical-guide/actions/workflows/supply-chain-gate.yml/badge.svg?branch=master)](https://github.com/opscart/docker-security-practical-guide/actions/workflows/supply-chain-gate.yml)
 
+
 # Docker Security: A Practical Guide
 
 A hands-on Docker and container security guide built around reproducible labs, attack scenarios, defensive controls, and production-oriented validation.
@@ -80,6 +81,15 @@ Use this section as the central entry point for the repository.
 
 <a id="lab-structure"></a>
 <a id="lab-catalog"></a>
+
+## Companion Projects
+
+Some topics evolve independently of this repository or require deeper experimentation than fits within the Docker Security Guide. These companion repositories provide verified implementations, extended experiments, and specialized documentation.
+
+| Project | Description |
+|----------|-------------|
+| [Docker Sandbox DevOps](https://github.com/opscart/docker-sandbox-devops) | Dedicated companion repository for Docker Sandboxes, AI coding-agent isolation, Kubernetes debugging, and DevOps toolkit experiments. |
+
 ## Lab Catalog
 
 Each lab has its own README with prerequisites, detailed steps, validation, expected results, and cleanup instructions. The root README intentionally provides a concise catalog so lab-specific documentation remains the source of truth.
@@ -459,6 +469,7 @@ chmod +x script-name.sh
 Do not use generic cleanup commands across all labs. Use the cleanup procedure documented by the selected lab.
 
 <a id="lab-completion-status"></a>
+
 ## Lab Completion Checklist
 
 - [ ] Lab 01: Security Auditing
@@ -476,6 +487,29 @@ Do not use generic cleanup commands across all labs. Use the cleanup procedure d
 - [ ] Lab 13: AI Context Poisoning Detection and Defense
 
 <a id="license"></a>
+
+## Related Repositories
+
+### Docker Sandbox DevOps
+
+Docker Sandboxes is evolving rapidly. To keep this repository focused on core Docker security while allowing rapid experimentation, advanced Docker Sandbox content is maintained in a dedicated companion repository.
+
+Topics include:
+
+- Docker Sandbox architecture
+- microVM isolation
+- AI coding agent security
+- network policy experiments
+- filesystem isolation
+- credential isolation
+- Kubernetes debugging inside Sandboxes
+- custom DevOps toolkit
+- verified engineering findings
+
+Repository:
+
+https://github.com/opscart/docker-sandbox-devops
+
 ## License
 
 MIT License. See [LICENSE](./LICENSE).
@@ -486,6 +520,7 @@ MIT License. See [LICENSE](./LICENSE).
 Thanks to the Docker, CIS, OWASP, Anchore, Sigstore, CNCF, and broader open-source security communities whose tools, standards, and documentation support these labs.
 
 <a id="contact--support"></a>
+
 ## Contact and Support
 
 - **Author:** Shamsher Khan
@@ -495,6 +530,7 @@ Thanks to the Docker, CIS, OWASP, Anchore, Sigstore, CNCF, and broader open-sour
 - **Discussions:** [GitHub Discussions](https://github.com/opscart/docker-security-practical-guide/discussions)
 
 <a id="professional-background"></a>
+
 ### Professional Background
 
 - Senior DevOps Engineer
